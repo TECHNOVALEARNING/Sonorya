@@ -304,6 +304,17 @@ export const App: React.FC = () => {
           onSuccess={(loggedInUser) => {
             setShowAuthModal(false);
             setUser(loggedInUser);
+            // Claim all session songs for this logged in user so they stay saved under their account
+            setOrders(prev => {
+              return prev.map(s => {
+                if (!s.userId || s.userId === 'user-current') {
+                  const claimed = { ...s, userId: loggedInUser.id };
+                  d1Database.saveSong(claimed);
+                  return claimed;
+                }
+                return s;
+              });
+            });
             if (loggedInUser.role === 'admin') {
               setAppView('admin');
             } else {

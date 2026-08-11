@@ -25,28 +25,7 @@ export const LANDING_SAMPLE_SONGS: Song[] = [
     voiceGender: 'Féminine',
     language: 'Français',
     story: 'Une chanson festive et entraînante pour l\'anniversaire de Sarah avec des rythmes Amapiano joyeux.',
-    lyrics: `[Couplet 1 - Afro Amapiano]
-Aujourd'hui les étoiles brillent d'un éclat particulier
-Les tambours résonnent pour honorer ton année
-Un sourire qui illumine la pièce, une joie contagieuse
-Pour notre chère Sarah, la plus précieuse
-
-[Refrain]
-Joyeux anniversaire Sarah ! (Sarah, Sarah !)
-Que la santé et la réussite marchent à tes côtés
-On lève nos verres pour célébrer ta beauté
-Que chaque rêve que tu portes devienne réalité
-Joyeux anniversaire Sarah !
-
-[Couplet 2]
-Autour de toi les sourires et les cœurs s'unissent
-Dans ce rythme Amapiano, tous nos vœux fleurissent
-Une bougie de plus, un nouveau départ doré
-Sarah, nous t'aimons et nous allons danser !
-
-[Outro]
-Joyeux anniversaire Sarah...
-Longue vie, bonheur et santé !`,
+    lyrics: '',
     audioUrl: '/audios/Annif.mp3',
     coverUrl: '/images/cover_amapiano_party.png',
     durationSeconds: 154,
@@ -63,29 +42,7 @@ Longue vie, bonheur et santé !`,
     voiceGender: 'Masculine',
     language: 'Français',
     story: 'Un hymne d\'amour vibrant célébrant une belle union en musique Afrobeat.',
-    lyrics: `[Intro - Afrobeat Love]
-Yeah, pour mon épouse adorée... Christelle...
-
-[Couplet 1]
-Le jour où nos regards se sont croisés, le temps s'est arrêté
-Dans tes yeux j'ai vu mon avenir, ma paix, ma moitié
-Ton amour est la plus douce des mélodies dans ma vie
-À tes côtés, chaque instant est une bénédiction infinie
-
-[Refrain]
-Christelle, mon amour, ma reine, mon épouse adorée
-Je te promets mon cœur et ma loyauté pour l'éternité
-Que notre amour grandisse chaque jour davantage
-Ensemble, main dans la main, pour le plus beau des voyages !
-
-[Couplet 2]
-Ton rire efface mes doutes, ta douceur me fortifie
-Pour ton soutien sans faille, mon cœur te dit merci
-Dans la joie comme dans les épreuves, je serai là pour toi
-Christelle, tu es ma plus belle histoire d'amour et ma joie.
-
-[Outro]
-Pour toujours... Christelle... Mon amour éternel.`,
+    lyrics: '',
     audioUrl: '/audios/marriage.mp3',
     coverUrl: '/images/cover_mariage_afrobeat.png',
     durationSeconds: 192,
@@ -102,29 +59,7 @@ Pour toujours... Christelle... Mon amour éternel.`,
     voiceGender: 'Duo / Mixte',
     language: 'Français',
     story: 'Un hommage doux et émouvant à la guitare acoustique.',
-    lyrics: `[Intro - Guitare Acoustique]
-Dédié avec tout notre amour... à notre cher Grand-Père...
-
-[Couplet 1]
-Les années ont passé mais la chaleur de tes mots reste gravée
-Tes histoires au coin du feu, ta sagesse et ta bonté
-Tu nous as appris la valeur du respect et de l'effort
-Tes enseignements et ton amour sont notre plus grand trésor
-
-[Refrain]
-Grand-Père, merci pour l'héritage d'amour que tu nous as donné
-Ton souvenir brille en nous comme une lumière sacrée
-Même si le temps s'écoule, ta bénédiction nous accompagne
-Ton nom et ton histoire résonnent dans nos cœurs !
-
-[Couplet 2]
-Dans le regard de nos enfants, on retrouve ton sourire
-Tes conseils bienveillants continuent de nous guider, de nous inspirer
-Que ton repos soit doux et que les anges veillent sur toi
-Grand-Père chéri, tu seras à jamais notre fierté et notre foi.
-
-[Outro]
-Repose en paix... Merci pour tout, Grand-Père...`,
+    lyrics: '',
     audioUrl: '/audios/grand pere.mp3',
     coverUrl: '/images/cover_hommage_acoustique.png',
     durationSeconds: 168,
@@ -141,27 +76,7 @@ Repose en paix... Merci pour tout, Grand-Père...`,
     voiceGender: 'Duo / Mixte',
     language: 'Français',
     story: 'Chanson d\'encouragement et d\'action de grâce pour la réussite au BAC.',
-    lyrics: `[Couplet 1 - Gospel Victoire]
-Les nuits blanches de révision, les efforts constants
-Les doutes surmontés avec foi et persévérance au fil des ans
-Aujourd'hui la prière a été exaucée, le soleil s'est levé
-La couronne de la victoire t'a été accordée !
-
-[Refrain]
-Félicitations pour le BAC ! (Gloire et Victoire !)
-Le travail acharné a porté ses plus beaux fruits
-Cette réussite n'est que le début d'un avenir radieux et béni
-On célèbre ta victoire, chantez et louez !
-Félicitations pour le BAC !
-
-[Couplet 2]
-Rien ne peut arrêter celui qui avance avec détermination
-Tu as honoré ta famille et toute la communauté en action
-Ouvre grand tes ailes, l'université et l'avenir t'attendent
-Que la lumière divine continue de t'élever et de te défendre !
-
-[Outro]
-Victoire ! Félicitations pour ce brillant diplôme !`,
+    lyrics: '',
     audioUrl: '/audios/bac.mp3',
     coverUrl: '/images/cover_bac_gospel.png',
     durationSeconds: 241,
@@ -178,15 +93,15 @@ export const DashboardMain: React.FC<MainProps> = ({ user, orders, onPlaySong, o
   const [editForm, setEditForm] = useState({ fullName: user.fullName || '', phone: user.phone || '' });
   const { showToast } = useToast();
 
-  // Filter and deduplicate user created orders belonging to THIS user
+  // Filter and deduplicate user created orders belonging to THIS user (including session songs)
   const uniqueOrders = React.useMemo(() => {
     const seenTitles = new Set<string>();
     const seenIds = new Set<string>();
     const list: Song[] = [];
 
     for (const song of orders) {
-      // Only include songs created by this user
-      if (song.userId && user.id && song.userId !== user.id) {
+      // Include songs created by this user OR created in current session
+      if (song.userId && user.id && song.userId !== user.id && song.userId !== 'user-current') {
         continue;
       }
       const titleKey = (song.title || '').toLowerCase().trim();
@@ -232,7 +147,26 @@ export const DashboardMain: React.FC<MainProps> = ({ user, orders, onPlaySong, o
         <div className="dashboard-grid">
           {items.map(order => (
             <div key={order.id} className="dashboard-card" onClick={() => onPlaySong(order)} style={{ cursor: 'pointer' }}>
-              <img src={order.coverUrl || '/images/cover_amapiano_party.png'} alt={order.title} />
+              <div style={{ position: 'relative', borderRadius: 10, overflow: 'hidden', marginBottom: 10 }}>
+                <img src={order.coverUrl || '/images/cover_amapiano_party.png'} alt={order.title} style={{ width: '100%', aspectRatio: '1', objectFit: 'cover', display: 'block' }} />
+                <div style={{
+                  position: 'absolute',
+                  bottom: 8,
+                  right: 8,
+                  width: 36,
+                  height: 36,
+                  borderRadius: '50%',
+                  background: 'linear-gradient(135deg, #2DD4BF, #0EA5E9)',
+                  color: '#0F172A',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.4)',
+                  transition: 'transform 0.2s ease'
+                }}>
+                  <Play size={16} fill="currentColor" style={{ marginLeft: 2 }} />
+                </div>
+              </div>
               <div className="dashboard-card-title">{cleanSongTitle(order.title)}</div>
               <div className="dashboard-card-subtitle">{order.genre}</div>
             </div>
@@ -240,8 +174,8 @@ export const DashboardMain: React.FC<MainProps> = ({ user, orders, onPlaySong, o
         </div>
       ) : (
         <div style={{ textAlign: 'center', padding: '64px 24px', background: 'rgba(255,255,255,0.02)', border: '1px dashed rgba(255,255,255,0.1)', borderRadius: 16, marginBottom: 40 }}>
-          <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'rgba(212,161,57,0.1)', color: 'var(--gold)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
-            {icon}
+          <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'rgba(212,161,57,0.12)', color: 'var(--gold)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px', border: '1px solid rgba(212,161,57,0.25)' }}>
+            {icon || <Play size={28} fill="currentColor" style={{ marginLeft: 3 }} />}
           </div>
           <h3 style={{ fontSize: 18, fontWeight: 600, marginBottom: 12 }}>{t('dashboard.nothingToShow')}</h3>
           <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 14, marginBottom: showCreateBtn ? 24 : 0, maxWidth: 300, margin: '0 auto' }}>
