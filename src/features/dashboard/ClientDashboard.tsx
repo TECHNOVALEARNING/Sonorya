@@ -107,6 +107,8 @@ export const ClientDashboard: React.FC<ClientDashboardProps> = ({
           <main className="dashboard-main" style={{ padding: '24px 32px 100px', overflowY: 'auto' }}>
             <SongWizard
               isEmbedded={true}
+              user={user}
+              onUpdateUser={onUpdateUser}
               onClose={() => setCurrentView('home')}
               onSongCreated={(newSong) => {
                 onSongCreated(newSong);

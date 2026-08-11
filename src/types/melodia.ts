@@ -60,6 +60,7 @@ export interface UserProfile {
   role: 'user' | 'admin';
   referralCode?: string;
   bonusCredits?: number;
+  songCredits?: number;
   createdAt?: string;
   totalSongs?: number;
   status?: 'active' | 'banned' | 'suspended';

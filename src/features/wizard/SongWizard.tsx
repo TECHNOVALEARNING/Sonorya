@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, Sparkles, ArrowRight, ArrowLeft, Check, ShieldCheck, Loader2, Music, Music2, Wand2, Mic, Globe, Volume2, Image as ImageIcon, ChevronDown, Plus } from 'lucide-react';
-import { Occasion, MusicalStyle, VoiceGender, SongLanguage, SongVibe, Song, MobilePaymentProvider, PaymentTransaction } from '../../types/melodia';
+import { UserProfile, Occasion, MusicalStyle, VoiceGender, SongLanguage, SongVibe, Song, MobilePaymentProvider, PaymentTransaction } from '../../types/melodia';
 import { d1Database } from '../../services/d1Service';
 import { CATEGORIES, MUSICAL_STYLES } from '../home/HomePage';
 import { OpenAiService } from '../../services/openAiService';
@@ -17,6 +17,8 @@ interface SongWizardProps {
   onSongCreated: (song: Song) => void;
   isEmbedded?: boolean;
   onDraftChange?: (draft: { title?: string; lyrics?: string; genre?: string }) => void;
+  user?: UserProfile | null;
+  onUpdateUser?: (updated: Partial<UserProfile>) => void;
 }
 
 export const SongWizard: React.FC<SongWizardProps> = ({
@@ -25,7 +27,9 @@ export const SongWizard: React.FC<SongWizardProps> = ({
   onClose,
   onSongCreated,
   isEmbedded = true,
-  onDraftChange
+  onDraftChange,
+  user,
+  onUpdateUser
 }) => {
   const [activeTab, setActiveTab] = useState<'description' | 'lyrics'>('description');
   const [isCustomOpen, setIsCustomOpen] = useState(true);
@@ -80,25 +84,68 @@ export const SongWizard: React.FC<SongWizardProps> = ({
     setStep(5); // Jump directly to summary / payment step
   };
 
+  const [selectedPlan, setSelectedPlan] = useState<'single' | 'trio' | 'prestige'>('single');
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+
+  const getPlanDetails = (plan: 'single' | 'trio' | 'prestige') => {
+    switch (plan) {
+      case 'trio':
+        return { amount: 2999, extraCredits: 2, label: 'Pack 3 Musiques (2 999 FCFA)' };
+      case 'prestige':
+        return { amount: 7999, extraCredits: 7, label: 'Pack 8 Musiques (7 999 FCFA)' };
+      default:
+        return { amount: 1999, extraCredits: 0, label: 'Chanson Unique (1 999 FCFA)' };
+    }
+  };
+
+  const userCredits = (user?.songCredits || 0) + (user?.bonusCredits || 0);
+
+  // Use 1 credit for 0 FCFA if user has credits available
+  const handleUseCredit = () => {
+    if (userCredits <= 0) return;
+
+    if (user) {
+      const updatedCredits = Math.max(0, (user.songCredits || 0) - 1);
+      const updatedUser = { ...user, songCredits: updatedCredits };
+      d1Database.saveUser(updatedUser);
+      onUpdateUser?.(updatedUser);
+    }
+
+    const paymentId = 'pay-' + Date.now();
+    const paymentRef = 'CREDIT-' + Date.now();
+    const payment: PaymentTransaction = {
+      id: paymentId,
+      userId: user?.id || 'user-current',
+      songId: '',
+      reference: paymentRef,
+      provider: 'Crédit Compte' as MobilePaymentProvider,
+      amountFcfa: 0,
+      phoneNumber: user?.phone || '',
+      status: 'successful',
+      createdAt: new Date().toISOString()
+    };
+    d1Database.savePayment(payment);
+    startGeneration(payment, paymentRef);
+  };
 
   // Moneroo payment handler: Initialize payment via API, open checkout, and start generation
   const handlePayAndGenerate = async () => {
     setIsProcessingPayment(true);
+    const { amount, extraCredits, label } = getPlanDetails(selectedPlan);
 
     try {
       const response = await fetch('/api/moneroo/initialize', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          amount: 2500,
+          amount: amount,
           currency: 'XOF',
-          description: `Chanson ${occasion} - ${recipientName || 'Sonorya'}`,
+          description: `${label} - ${occasion} (${recipientName || 'Sonorya'})`,
           customer: {
-            email: 'client@sonorya.com',
+            email: user?.email || 'client@sonorya.com',
             first_name: recipientName || 'Client',
             last_name: 'Sonorya',
-            phone: phone || ''
+            phone: phone || user?.phone || ''
           },
           return_url: window.location.href
         })
@@ -111,8 +158,15 @@ export const SongWizard: React.FC<SongWizardProps> = ({
       const checkoutUrl = data.data?.checkout_url || data.checkout_url;
 
       if (checkoutUrl) {
-        // Open Moneroo checkout page in new window / tab
         window.open(checkoutUrl, '_blank');
+      }
+
+      // Add extra credits to user profile if purchasing a multi-song pack
+      if (extraCredits > 0 && user) {
+        const newCredits = (user.songCredits || 0) + extraCredits;
+        const updatedUser = { ...user, songCredits: newCredits };
+        d1Database.saveUser(updatedUser);
+        onUpdateUser?.(updatedUser);
       }
 
       // Save payment to D1 database
@@ -120,12 +174,12 @@ export const SongWizard: React.FC<SongWizardProps> = ({
       const paymentRef = 'MONEROO-' + monerooId;
       const payment: PaymentTransaction = {
         id: paymentId,
-        userId: 'user-current',
+        userId: user?.id || 'user-current',
         songId: '',
         reference: paymentRef,
         provider: 'Moneroo' as MobilePaymentProvider,
-        amountFcfa: 2500,
-        phoneNumber: phone || '',
+        amountFcfa: amount,
+        phoneNumber: phone || user?.phone || '',
         status: 'successful',
         createdAt: new Date().toISOString()
       };
@@ -135,17 +189,24 @@ export const SongWizard: React.FC<SongWizardProps> = ({
       startGeneration(payment, paymentRef);
     } catch (err) {
       console.error('[MONEROO] Payment error:', err);
-      // Fallback: create payment record & generate music
+
+      if (extraCredits > 0 && user) {
+        const newCredits = (user.songCredits || 0) + extraCredits;
+        const updatedUser = { ...user, songCredits: newCredits };
+        d1Database.saveUser(updatedUser);
+        onUpdateUser?.(updatedUser);
+      }
+
       const paymentId = 'pay-' + Date.now();
       const paymentRef = 'MONEROO-FB-' + Date.now();
       const payment: PaymentTransaction = {
         id: paymentId,
-        userId: 'user-current',
+        userId: user?.id || 'user-current',
         songId: '',
         reference: paymentRef,
         provider: 'Moneroo' as MobilePaymentProvider,
-        amountFcfa: 2500,
-        phoneNumber: phone || '',
+        amountFcfa: amount,
+        phoneNumber: phone || user?.phone || '',
         status: 'successful',
         createdAt: new Date().toISOString()
       };
@@ -610,22 +671,22 @@ export const SongWizard: React.FC<SongWizardProps> = ({
         <div>
           {step === 5 && (
             <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 18, padding: 22 }}>
-              <div style={{ fontSize: 12, color: '#2DD4BF', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0.8 }}>Summary</div>
-              <h4 style={{ fontSize: 20, margin: '4px 0 12px', color: '#FFFFFF' }}>Song for {recipientName || 'You'}</h4>
-              <ul style={{ listStyle: 'none', fontSize: 14, color: '#94A3B8', lineHeight: 1.9 }}>
+              <div style={{ fontSize: 12, color: '#2DD4BF', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0.8 }}>Récapitulatif de la commande</div>
+              <h4 style={{ fontSize: 20, margin: '4px 0 12px', color: '#FFFFFF' }}>Musique pour {recipientName || 'Vous'}</h4>
+              <ul style={{ listStyle: 'none', fontSize: 14, color: '#94A3B8', lineHeight: 1.9, padding: 0 }}>
                 <li><strong style={{ color: '#FFFFFF' }}>Occasion:</strong> {occasion}</li>
-                <li><strong style={{ color: '#FFFFFF' }}>Style:</strong> {genre}</li>
-                <li><strong style={{ color: '#FFFFFF' }}>Voice:</strong> {voiceGender} · {language}</li>
+                <li><strong style={{ color: '#FFFFFF' }}>Style Musical:</strong> {genre}</li>
+                <li><strong style={{ color: '#FFFFFF' }}>Voix:</strong> {voiceGender} · {language}</li>
                 <li style={{ marginTop: 12, fontSize: 18, color: '#2DD4BF', fontWeight: 800 }}>
-                  2 500 FCFA
+                  Formule sélectionnée : {getPlanDetails(selectedPlan).label}
                 </li>
               </ul>
               <div style={{ display: 'flex', gap: 12, marginTop: 20 }}>
                 <button className="btn-glass" style={{ flex: 1 }} onClick={() => setStep(1)}>
-                  <ArrowLeft size={16} /> Edit
+                  <ArrowLeft size={16} /> Modifier
                 </button>
                 <button className="btn-coral" style={{ flex: 2 }} onClick={() => setStep(6)}>
-                  Proceed to Payment <ArrowRight size={16} />
+                  Passer au Paiement <ArrowRight size={16} />
                 </button>
               </div>
             </div>
@@ -633,14 +694,102 @@ export const SongWizard: React.FC<SongWizardProps> = ({
 
           {step === 6 && (
             <div>
-              <div style={{ background: 'rgba(45, 212, 191, 0.08)', border: '1px solid rgba(45, 212, 191, 0.2)', borderRadius: 16, padding: 20, marginBottom: 16, textAlign: 'center' }}>
-                <ShieldCheck size={28} style={{ color: '#2DD4BF', marginBottom: 8 }} />
-                <h4 style={{ fontSize: 18, fontWeight: 800, color: '#FFFFFF', margin: '0 0 4px' }}>Paiement Sécurisé Moneroo</h4>
-                <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.6)', margin: '0 0 12px' }}>
-                  Paiement par Mobile Money (MTN, Moov, Wave, Orange) ou Carte Bancaire via Moneroo
+              {/* Option to use credit if available */}
+              {userCredits > 0 ? (
+                <div style={{ background: 'rgba(45, 212, 191, 0.12)', border: '1.5px solid #2DD4BF', borderRadius: 16, padding: 20, marginBottom: 20, textAlign: 'center' }}>
+                  <Sparkles size={28} style={{ color: '#2DD4BF', marginBottom: 6 }} />
+                  <h4 style={{ fontSize: 17, fontWeight: 800, color: '#FFFFFF', margin: '0 0 4px' }}>
+                    Vous avez {userCredits} {userCredits > 1 ? 'crédits disponibles' : 'crédit disponible'} !
+                  </h4>
+                  <p style={{ fontSize: 12.5, color: 'rgba(255,255,255,0.7)', margin: '0 0 14px' }}>
+                    Utilisez 1 crédit de votre compte pour générer cette musique sans aucun frais supplémentaire.
+                  </p>
+                  <button className="btn-emerald" style={{ width: '100%', padding: '14px', fontSize: 15, justifyContent: 'center' }} onClick={handleUseCredit}>
+                    ⚡ Générer avec 1 Crédit (0 FCFA) <Sparkles size={16} />
+                  </button>
+                  <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginTop: 10 }}>Ou choisissez une formule ci-dessous pour recharger votre compte :</div>
+                </div>
+              ) : null}
+
+              {/* Selector for Pricing Plans */}
+              <div style={{ marginBottom: 16 }}>
+                <label className="form-label" style={{ fontSize: 13, color: 'rgba(255,255,255,0.8)', marginBottom: 10, display: 'block', fontWeight: 700 }}>
+                  Sélectionnez votre formule :
+                </label>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
+                  {/* Single Plan */}
+                  <div
+                    onClick={() => setSelectedPlan('single')}
+                    style={{
+                      background: selectedPlan === 'single' ? 'rgba(45, 212, 191, 0.16)' : 'rgba(255,255,255,0.03)',
+                      border: selectedPlan === 'single' ? '2px solid #2DD4BF' : '1px solid rgba(255,255,255,0.08)',
+                      borderRadius: 14,
+                      padding: 14,
+                      textAlign: 'center',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease'
+                    }}
+                  >
+                    <div style={{ fontSize: 12, fontWeight: 800, color: '#FFFFFF', marginBottom: 2 }}>1 Musique</div>
+                    <div style={{ fontSize: 17, fontWeight: 900, color: selectedPlan === 'single' ? '#2DD4BF' : '#FFFFFF' }}>1 999 F</div>
+                    <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.5)', marginTop: 4 }}>1 999 F / titre</div>
+                  </div>
+
+                  {/* Trio Plan */}
+                  <div
+                    onClick={() => setSelectedPlan('trio')}
+                    style={{
+                      background: selectedPlan === 'trio' ? 'rgba(45, 212, 191, 0.16)' : 'rgba(255,255,255,0.03)',
+                      border: selectedPlan === 'trio' ? '2px solid #2DD4BF' : '1px solid rgba(255,255,255,0.08)',
+                      borderRadius: 14,
+                      padding: 14,
+                      textAlign: 'center',
+                      cursor: 'pointer',
+                      position: 'relative',
+                      transition: 'all 0.2s ease'
+                    }}
+                  >
+                    <span style={{ position: 'absolute', top: -10, left: '50%', transform: 'translateX(-50%)', background: '#2DD4BF', color: '#0F172A', fontSize: 8.5, fontWeight: 900, padding: '2px 7px', borderRadius: 99, whiteSpace: 'nowrap' }}>
+                      ⭐ POPULAIRE
+                    </span>
+                    <div style={{ fontSize: 12, fontWeight: 800, color: '#FFFFFF', marginBottom: 2 }}>3 Musiques</div>
+                    <div style={{ fontSize: 17, fontWeight: 900, color: selectedPlan === 'trio' ? '#2DD4BF' : '#FFFFFF' }}>2 999 F</div>
+                    <div style={{ fontSize: 10, color: 'var(--gold)', fontWeight: 700, marginTop: 4 }}>1 000 F / titre</div>
+                  </div>
+
+                  {/* Prestige Plan */}
+                  <div
+                    onClick={() => setSelectedPlan('prestige')}
+                    style={{
+                      background: selectedPlan === 'prestige' ? 'rgba(45, 212, 191, 0.16)' : 'rgba(255,255,255,0.03)',
+                      border: selectedPlan === 'prestige' ? '2px solid #2DD4BF' : '1px solid rgba(255,255,255,0.08)',
+                      borderRadius: 14,
+                      padding: 14,
+                      textAlign: 'center',
+                      cursor: 'pointer',
+                      position: 'relative',
+                      transition: 'all 0.2s ease'
+                    }}
+                  >
+                    <span style={{ position: 'absolute', top: -10, left: '50%', transform: 'translateX(-50%)', background: 'var(--coral)', color: '#FFFFFF', fontSize: 8.5, fontWeight: 900, padding: '2px 7px', borderRadius: 99, whiteSpace: 'nowrap' }}>
+                      🔥 MEILLEUR PRIX
+                    </span>
+                    <div style={{ fontSize: 12, fontWeight: 800, color: '#FFFFFF', marginBottom: 2 }}>8 Musiques</div>
+                    <div style={{ fontSize: 17, fontWeight: 900, color: selectedPlan === 'prestige' ? '#2DD4BF' : '#FFFFFF' }}>7 999 F</div>
+                    <div style={{ fontSize: 10, color: 'var(--gold)', fontWeight: 700, marginTop: 4 }}>1 000 F / titre</div>
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ background: 'rgba(45, 212, 191, 0.08)', border: '1px solid rgba(45, 212, 191, 0.2)', borderRadius: 16, padding: 18, marginBottom: 16, textAlign: 'center' }}>
+                <ShieldCheck size={26} style={{ color: '#2DD4BF', marginBottom: 6 }} />
+                <h4 style={{ fontSize: 17, fontWeight: 800, color: '#FFFFFF', margin: '0 0 2px' }}>
+                  Total : {getPlanDetails(selectedPlan).amount.toLocaleString()} FCFA
+                </h4>
+                <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', margin: '0 0 8px' }}>
+                  Paiement sécurisé Mobile Money (MTN, Moov, Wave, Orange) ou Carte via Moneroo
                 </p>
-                <div style={{ fontSize: 28, fontWeight: 900, color: '#2DD4BF', marginBottom: 4 }}>2 500 FCFA</div>
-                <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>MTN MoMo · Moov Money · Wave · Orange Money · Carte Visa/Mastercard</div>
+                <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>MTN MoMo · Moov Money · Wave · Orange Money · Carte Visa/Mastercard</div>
               </div>
 
               <div style={{ marginBottom: 16 }}>
@@ -672,7 +821,7 @@ export const SongWizard: React.FC<SongWizardProps> = ({
                 {isProcessingPayment ? (
                   <>Initialisation Moneroo... <Loader2 size={16} className="animate-spin" /></>
                 ) : (
-                  <>💳 Payer & Générer avec Moneroo <ShieldCheck size={16} /></>
+                  <>💳 Payer {getPlanDetails(selectedPlan).amount.toLocaleString()} FCFA avec Moneroo <ShieldCheck size={16} /></>
                 )}
               </button>
 
