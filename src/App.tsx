@@ -3,6 +3,7 @@ import { IzimeloHeader } from './components/izimelo/IzimeloHeader';
 import { IzimeloHero } from './components/izimelo/IzimeloHero';
 import { OccasionsTicker } from './components/izimelo/OccasionsTicker';
 import { IzimeloHowItWorks } from './components/izimelo/IzimeloHowItWorks';
+import { IzimeloPricing } from './components/izimelo/IzimeloPricing';
 import { IzimeloDemos } from './components/izimelo/IzimeloDemos';
 import { IzimeloCoverFlow } from './components/izimelo/IzimeloCoverFlow';
 import { IzimeloTestimonials } from './components/izimelo/IzimeloTestimonials';
@@ -247,6 +248,7 @@ export const App: React.FC = () => {
               <IzimeloHero onOpenCreate={handleOpenWizard} />
               <OccasionsTicker />
               <IzimeloHowItWorks />
+              <IzimeloPricing onOpenCreate={handleOpenWizard} />
               <IzimeloDemos />
               <IzimeloCoverFlow />
               <IzimeloTestimonials />

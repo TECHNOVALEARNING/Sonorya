@@ -678,7 +678,7 @@ export const SongWizard: React.FC<SongWizardProps> = ({
                 <li><strong style={{ color: '#FFFFFF' }}>Style Musical:</strong> {genre}</li>
                 <li><strong style={{ color: '#FFFFFF' }}>Voix:</strong> {voiceGender} · {language}</li>
                 <li style={{ marginTop: 12, fontSize: 18, color: '#2DD4BF', fontWeight: 800 }}>
-                  Formule sélectionnée : {getPlanDetails(selectedPlan).label}
+                  Tarif : {userCredits > 0 ? '1 Crédit disponible (0 FCFA)' : '1 999 FCFA'}
                 </li>
               </ul>
               <div style={{ display: 'flex', gap: 12, marginTop: 20 }}>
@@ -694,140 +694,71 @@ export const SongWizard: React.FC<SongWizardProps> = ({
 
           {step === 6 && (
             <div>
-              {/* Option to use credit if available */}
+              {/* Option to use credit if available on user profile */}
               {userCredits > 0 ? (
-                <div style={{ background: 'rgba(45, 212, 191, 0.12)', border: '1.5px solid #2DD4BF', borderRadius: 16, padding: 20, marginBottom: 20, textAlign: 'center' }}>
+                <div style={{ background: 'rgba(45, 212, 191, 0.12)', border: '1.5px solid #2DD4BF', borderRadius: 16, padding: 20, marginBottom: 16, textAlign: 'center' }}>
                   <Sparkles size={28} style={{ color: '#2DD4BF', marginBottom: 6 }} />
                   <h4 style={{ fontSize: 17, fontWeight: 800, color: '#FFFFFF', margin: '0 0 4px' }}>
                     Vous avez {userCredits} {userCredits > 1 ? 'crédits disponibles' : 'crédit disponible'} !
                   </h4>
                   <p style={{ fontSize: 12.5, color: 'rgba(255,255,255,0.7)', margin: '0 0 14px' }}>
-                    Utilisez 1 crédit de votre compte pour générer cette musique sans aucun frais supplémentaire.
+                    Utilisez 1 crédit de votre compte pour générer cette musique sans payer.
                   </p>
-                  <button className="btn-emerald" style={{ width: '100%', padding: '14px', fontSize: 15, justifyContent: 'center' }} onClick={handleUseCredit}>
+                  <button className="btn-emerald" style={{ width: '100%', padding: '15px', fontSize: 15, justifyContent: 'center' }} onClick={handleUseCredit}>
                     ⚡ Générer avec 1 Crédit (0 FCFA) <Sparkles size={16} />
                   </button>
-                  <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginTop: 10 }}>Ou choisissez une formule ci-dessous pour recharger votre compte :</div>
                 </div>
-              ) : null}
-
-              {/* Selector for Pricing Plans */}
-              <div style={{ marginBottom: 16 }}>
-                <label className="form-label" style={{ fontSize: 13, color: 'rgba(255,255,255,0.8)', marginBottom: 10, display: 'block', fontWeight: 700 }}>
-                  Sélectionnez votre formule :
-                </label>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
-                  {/* Single Plan */}
-                  <div
-                    onClick={() => setSelectedPlan('single')}
-                    style={{
-                      background: selectedPlan === 'single' ? 'rgba(45, 212, 191, 0.16)' : 'rgba(255,255,255,0.03)',
-                      border: selectedPlan === 'single' ? '2px solid #2DD4BF' : '1px solid rgba(255,255,255,0.08)',
-                      borderRadius: 14,
-                      padding: 14,
-                      textAlign: 'center',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s ease'
-                    }}
-                  >
-                    <div style={{ fontSize: 12, fontWeight: 800, color: '#FFFFFF', marginBottom: 2 }}>1 Musique</div>
-                    <div style={{ fontSize: 17, fontWeight: 900, color: selectedPlan === 'single' ? '#2DD4BF' : '#FFFFFF' }}>1 999 F</div>
-                    <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.5)', marginTop: 4 }}>1 999 F / titre</div>
+              ) : (
+                /* Simple, clean checkout for the song being created */
+                <div>
+                  <div style={{ background: 'rgba(45, 212, 191, 0.08)', border: '1px solid rgba(45, 212, 191, 0.2)', borderRadius: 16, padding: 20, marginBottom: 16, textAlign: 'center' }}>
+                    <ShieldCheck size={28} style={{ color: '#2DD4BF', marginBottom: 8 }} />
+                    <h4 style={{ fontSize: 18, fontWeight: 800, color: '#FFFFFF', margin: '0 0 4px' }}>Paiement Sécurisé Moneroo</h4>
+                    <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.6)', margin: '0 0 10px' }}>
+                      Paiement par Mobile Money (MTN, Moov, Wave, Orange) ou Carte Bancaire
+                    </p>
+                    <div style={{ fontSize: 28, fontWeight: 900, color: '#2DD4BF', marginBottom: 4 }}>1 999 FCFA</div>
+                    <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>MTN MoMo · Moov Money · Wave · Orange Money · Carte Visa/Mastercard</div>
                   </div>
 
-                  {/* Trio Plan */}
-                  <div
-                    onClick={() => setSelectedPlan('trio')}
-                    style={{
-                      background: selectedPlan === 'trio' ? 'rgba(45, 212, 191, 0.16)' : 'rgba(255,255,255,0.03)',
-                      border: selectedPlan === 'trio' ? '2px solid #2DD4BF' : '1px solid rgba(255,255,255,0.08)',
-                      borderRadius: 14,
-                      padding: 14,
-                      textAlign: 'center',
-                      cursor: 'pointer',
-                      position: 'relative',
-                      transition: 'all 0.2s ease'
-                    }}
-                  >
-                    <span style={{ position: 'absolute', top: -10, left: '50%', transform: 'translateX(-50%)', background: '#2DD4BF', color: '#0F172A', fontSize: 8.5, fontWeight: 900, padding: '2px 7px', borderRadius: 99, whiteSpace: 'nowrap' }}>
-                      ⭐ POPULAIRE
-                    </span>
-                    <div style={{ fontSize: 12, fontWeight: 800, color: '#FFFFFF', marginBottom: 2 }}>3 Musiques</div>
-                    <div style={{ fontSize: 17, fontWeight: 900, color: selectedPlan === 'trio' ? '#2DD4BF' : '#FFFFFF' }}>2 999 F</div>
-                    <div style={{ fontSize: 10, color: 'var(--gold)', fontWeight: 700, marginTop: 4 }}>1 000 F / titre</div>
+                  <div style={{ marginBottom: 16 }}>
+                    <label className="form-label" style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)' }}>Numéro de téléphone (optionnel)</label>
+                    <input
+                      type="tel"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      placeholder="Ex: 97 00 00 00"
+                      style={{
+                        width: '100%',
+                        padding: '12px 16px',
+                        borderRadius: 12,
+                        border: '1px solid rgba(255,255,255,0.1)',
+                        background: 'rgba(255,255,255,0.04)',
+                        color: '#FFFFFF',
+                        fontSize: 14,
+                        outline: 'none'
+                      }}
+                    />
                   </div>
 
-                  {/* Prestige Plan */}
-                  <div
-                    onClick={() => setSelectedPlan('prestige')}
-                    style={{
-                      background: selectedPlan === 'prestige' ? 'rgba(45, 212, 191, 0.16)' : 'rgba(255,255,255,0.03)',
-                      border: selectedPlan === 'prestige' ? '2px solid #2DD4BF' : '1px solid rgba(255,255,255,0.08)',
-                      borderRadius: 14,
-                      padding: 14,
-                      textAlign: 'center',
-                      cursor: 'pointer',
-                      position: 'relative',
-                      transition: 'all 0.2s ease'
-                    }}
+                  <button
+                    className="btn-coral"
+                    style={{ width: '100%', marginTop: 8, padding: '16px 24px', fontSize: 16, opacity: isProcessingPayment ? 0.7 : 1, cursor: isProcessingPayment ? 'not-allowed' : 'pointer' }}
+                    onClick={handlePayAndGenerate}
+                    disabled={isProcessingPayment}
                   >
-                    <span style={{ position: 'absolute', top: -10, left: '50%', transform: 'translateX(-50%)', background: 'var(--coral)', color: '#FFFFFF', fontSize: 8.5, fontWeight: 900, padding: '2px 7px', borderRadius: 99, whiteSpace: 'nowrap' }}>
-                      🔥 MEILLEUR PRIX
-                    </span>
-                    <div style={{ fontSize: 12, fontWeight: 800, color: '#FFFFFF', marginBottom: 2 }}>8 Musiques</div>
-                    <div style={{ fontSize: 17, fontWeight: 900, color: selectedPlan === 'prestige' ? '#2DD4BF' : '#FFFFFF' }}>7 999 F</div>
-                    <div style={{ fontSize: 10, color: 'var(--gold)', fontWeight: 700, marginTop: 4 }}>1 000 F / titre</div>
-                  </div>
+                    {isProcessingPayment ? (
+                      <>Initialisation Moneroo... <Loader2 size={16} className="animate-spin" /></>
+                    ) : (
+                      <>💳 Payer 1 999 FCFA & Générer <ShieldCheck size={16} /></>
+                    )}
+                  </button>
+
+                  <p style={{ textAlign: 'center', fontSize: 11, color: 'rgba(255,255,255,0.35)', marginTop: 12 }}>
+                    🔒 Transaction sécurisée par Moneroo · Sonorya by Technova
+                  </p>
                 </div>
-              </div>
-
-              <div style={{ background: 'rgba(45, 212, 191, 0.08)', border: '1px solid rgba(45, 212, 191, 0.2)', borderRadius: 16, padding: 18, marginBottom: 16, textAlign: 'center' }}>
-                <ShieldCheck size={26} style={{ color: '#2DD4BF', marginBottom: 6 }} />
-                <h4 style={{ fontSize: 17, fontWeight: 800, color: '#FFFFFF', margin: '0 0 2px' }}>
-                  Total : {getPlanDetails(selectedPlan).amount.toLocaleString()} FCFA
-                </h4>
-                <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', margin: '0 0 8px' }}>
-                  Paiement sécurisé Mobile Money (MTN, Moov, Wave, Orange) ou Carte via Moneroo
-                </p>
-                <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>MTN MoMo · Moov Money · Wave · Orange Money · Carte Visa/Mastercard</div>
-              </div>
-
-              <div style={{ marginBottom: 16 }}>
-                <label className="form-label" style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)' }}>Numéro de téléphone (optionnel)</label>
-                <input
-                  type="tel"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="Ex: 97 00 00 00"
-                  style={{
-                    width: '100%',
-                    padding: '12px 16px',
-                    borderRadius: 12,
-                    border: '1px solid rgba(255,255,255,0.1)',
-                    background: 'rgba(255,255,255,0.04)',
-                    color: '#FFFFFF',
-                    fontSize: 14,
-                    outline: 'none'
-                  }}
-                />
-              </div>
-
-              <button
-                className="btn-coral"
-                style={{ width: '100%', marginTop: 8, padding: '16px 24px', fontSize: 16, opacity: isProcessingPayment ? 0.7 : 1, cursor: isProcessingPayment ? 'not-allowed' : 'pointer' }}
-                onClick={handlePayAndGenerate}
-                disabled={isProcessingPayment}
-              >
-                {isProcessingPayment ? (
-                  <>Initialisation Moneroo... <Loader2 size={16} className="animate-spin" /></>
-                ) : (
-                  <>💳 Payer {getPlanDetails(selectedPlan).amount.toLocaleString()} FCFA avec Moneroo <ShieldCheck size={16} /></>
-                )}
-              </button>
-
-              <p style={{ textAlign: 'center', fontSize: 11, color: 'rgba(255,255,255,0.35)', marginTop: 12 }}>
-                🔒 Transaction sécurisée par Moneroo · Sonorya by Technova
-              </p>
+              )}
             </div>
           )}
 

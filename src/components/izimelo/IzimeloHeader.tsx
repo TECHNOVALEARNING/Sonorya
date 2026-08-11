@@ -31,9 +31,10 @@ export const IzimeloHeader: React.FC<IzimeloHeaderProps> = ({
 
         {/* Desktop nav */}
         <nav className="izimelo-nav izimelo-nav-desktop">
+          <a href="#pricing">{lang === 'FR' ? 'Tarifs' : 'Pricing'}</a>
+          <a href="#how">{t('header.howItWorks')}</a>
           <a href="#examples">{t('header.examples')}</a>
           <a href="#library">{t('header.library')}</a>
-          <a href="#how">{t('header.howItWorks')}</a>
           <a href="#reviews">{t('header.reviews')}</a>
           <a href="#faq">{t('header.faq')}</a>
 
@@ -53,6 +54,9 @@ export const IzimeloHeader: React.FC<IzimeloHeaderProps> = ({
                 background: 'linear-gradient(135deg, #2DD4BF, #0EA5E9)',
                 boxShadow: '0 4px 16px rgba(45, 212, 191, 0.3)',
                 padding: '10px 20px',
+                color: '#0F172A',
+                fontWeight: 800,
+                border: 'none',
                 borderRadius: 99
               }}
             >
@@ -61,23 +65,25 @@ export const IzimeloHeader: React.FC<IzimeloHeaderProps> = ({
             </button>
           ) : (
             <button className="btn-coral" onClick={onOpenLogin}>
+              <User size={16} />
               <span>{t('header.login')}</span>
             </button>
           )}
         </nav>
 
         {/* Mobile hamburger */}
-        <button className="mobile-menu-toggle" onClick={() => setMobileOpen(!mobileOpen)}>
-          {mobileOpen ? <X size={24} /> : <Menu size={24} />}
+        <button className="mobile-toggle" onClick={() => setMobileOpen(!mobileOpen)} aria-label="Toggle menu">
+          {mobileOpen ? <X size={22} /> : <Menu size={22} />}
         </button>
       </div>
 
       {/* Mobile drawer */}
       {mobileOpen && (
         <div className="mobile-nav-drawer">
+          <a href="#pricing" onClick={() => setMobileOpen(false)}>{lang === 'FR' ? 'Tarifs & Formules' : 'Pricing & Plans'}</a>
+          <a href="#how" onClick={() => setMobileOpen(false)}>{t('header.howItWorks')}</a>
           <a href="#examples" onClick={() => setMobileOpen(false)}>{t('header.examples')}</a>
           <a href="#library" onClick={() => setMobileOpen(false)}>{t('header.library')}</a>
-          <a href="#how" onClick={() => setMobileOpen(false)}>{t('header.howItWorks')}</a>
           <a href="#reviews" onClick={() => setMobileOpen(false)}>{t('header.reviews')}</a>
           <a href="#faq" onClick={() => setMobileOpen(false)}>{t('header.faq')}</a>
           
