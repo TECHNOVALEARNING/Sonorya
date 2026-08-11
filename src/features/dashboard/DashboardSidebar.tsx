@@ -15,10 +15,11 @@ export const DashboardSidebar: React.FC<SidebarProps> = ({ onNavigate, onLogout,
   return (
     <aside className="dashboard-sidebar client-sidebar" style={{ background: '#12141D', backgroundImage: 'radial-gradient(circle at 50% 0%, rgba(45, 212, 191, 0.08) 0%, transparent 70%)', borderRight: '1px solid rgba(255,255,255,0.06)', width: 240, minWidth: 240, height: '100vh', minHeight: '100vh', maxHeight: '100vh', overflowY: 'auto', display: 'flex', flexDirection: 'column', padding: '24px 18px 28px', position: 'relative', zIndex: 2 }}>
       <div 
-        style={{ fontFamily: 'Fraunces, serif', fontSize: 22, fontWeight: 700, color: 'var(--ivory)', marginBottom: 24, display: 'flex', alignItems: 'center', gap: 8, cursor: onBackToLanding ? 'pointer' : 'default' }}
+        style={{ fontFamily: 'Fraunces, serif', fontSize: 22, fontWeight: 700, color: 'var(--ivory)', marginBottom: 24, display: 'flex', alignItems: 'center', gap: 10, cursor: onBackToLanding ? 'pointer' : 'default' }}
         onClick={() => onBackToLanding && onBackToLanding()}
         title="Retour à l'accueil"
       >
+        <img src="/images/sonorya-app-logo.png" alt="Sonorya Logo" style={{ width: 28, height: 28, borderRadius: 6, objectFit: 'cover' }} />
         Sonorya<span style={{ color: 'var(--coral)' }}>.</span>
         <span style={{ fontSize: 10, background: 'rgba(45,212,191,0.15)', color: 'var(--gold)', padding: '2px 8px', borderRadius: 99, fontWeight: 700, marginLeft: 'auto' }}>Client</span>
       </div>

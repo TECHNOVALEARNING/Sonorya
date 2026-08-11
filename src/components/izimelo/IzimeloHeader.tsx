@@ -22,15 +22,8 @@ export const IzimeloHeader: React.FC<IzimeloHeaderProps> = ({
   return (
     <header className="izimelo-header">
       <div className="wrap header-inner">
-        <a href="#" className="logo">
-          <div className="wave">
-            <i />
-            <i />
-            <i />
-            <i />
-            <i />
-            <i />
-          </div>
+        <a href="#" className="logo" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <img src="/images/sonorya-app-logo.png" alt="Sonorya Logo" style={{ width: 34, height: 34, borderRadius: 8, objectFit: 'cover' }} />
           <div>
             Son<span className="accent">o</span>rya <span style={{ fontSize: 13, color: 'var(--gold)' }}>by Technova</span>
           </div>
