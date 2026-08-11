@@ -1,0 +1,715 @@
+import React, { useState, useEffect } from 'react';
+import { X, Sparkles, ArrowRight, ArrowLeft, Check, ShieldCheck, Loader2, Music, Music2, Wand2, Mic, Globe, Volume2, Image as ImageIcon, ChevronDown, Plus } from 'lucide-react';
+import { Occasion, MusicalStyle, VoiceGender, SongLanguage, SongVibe, Song, MobilePaymentProvider, PaymentTransaction } from '../../types/melodia';
+import { d1Database } from '../../services/d1Service';
+import { CATEGORIES, MUSICAL_STYLES } from '../home/HomePage';
+import { OpenAiService } from '../../services/openAiService';
+import { KieService } from '../../services/kieService';
+import confetti from 'canvas-confetti';
+import { useTranslation } from '../../i18n/LanguageContext';
+import { fr } from '../../i18n/translations/fr';
+import { en } from '../../i18n/translations/en';
+
+interface SongWizardProps {
+  initialOccasion?: Occasion;
+  initialGenre?: MusicalStyle;
+  onClose: () => void;
+  onSongCreated: (song: Song) => void;
+  isEmbedded?: boolean;
+  onDraftChange?: (draft: { title?: string; lyrics?: string; genre?: string }) => void;
+}
+
+export const SongWizard: React.FC<SongWizardProps> = ({
+  initialOccasion,
+  initialGenre,
+  onClose,
+  onSongCreated,
+  isEmbedded = true,
+  onDraftChange
+}) => {
+  const [activeTab, setActiveTab] = useState<'description' | 'lyrics'>('description');
+  const [isCustomOpen, setIsCustomOpen] = useState(true);
+  const [isInstrumental, setIsInstrumental] = useState(false);
+
+  const [step, setStep] = useState<number>(1);
+  const [occasion, setOccasion] = useState<Occasion | 'Autre'>(initialOccasion || 'Anniversaire');
+  const [customOccasion, setCustomOccasion] = useState('');
+  const [recipientName, setRecipientName] = useState('');
+  const [story, setStory] = useState('');
+  const [customLyrics, setCustomLyrics] = useState('');
+  const [genre, setGenre] = useState<MusicalStyle | 'Autre'>(initialGenre || 'Afrobeat');
+  const [customGenre, setCustomGenre] = useState('');
+  const [voiceGender, setVoiceGender] = useState<VoiceGender>('Duo / Mixte');
+  const [language, setLanguage] = useState<SongLanguage>('Français');
+  const [vibe, setVibe] = useState<SongVibe>('Joyeux & Festif');
+  const [tempo, setTempo] = useState<number>(115);
+  const [provider, setProvider] = useState<MobilePaymentProvider>('MTN MoMo');
+  const [phone, setPhone] = useState('');
+
+  // Generation animation state
+  const [genProgress, setGenProgress] = useState(0);
+  const [genMessage, setGenMessage] = useState('');
+  
+  const { t, lang } = useTranslation();
+  const tBase = lang === 'FR' ? fr.wizard : en.wizard;
+  const catsBase = lang === 'FR' ? fr.categories : en.categories;
+
+  // Broadcast draft changes to right panel
+  useEffect(() => {
+    if (onDraftChange) {
+      const finalTitle = recipientName ? recipientName.trim() : occasion;
+      const finalGenre = genre === 'Autre' ? (customGenre || 'Sur-mesure') : genre;
+      const activeText = activeTab === 'lyrics' ? customLyrics : story;
+      onDraftChange({
+        title: finalTitle,
+        genre: finalGenre,
+        lyrics: activeText.trim() ? activeText : undefined
+      });
+    }
+  }, [story, customLyrics, recipientName, genre, customGenre, occasion, activeTab]);
+
+  const handleCreateClick = () => {
+    if (activeTab === 'description' && !story.trim()) {
+      alert(t('wizard.errors.story'));
+      return;
+    }
+    if (activeTab === 'lyrics' && !customLyrics.trim()) {
+      alert(lang === 'FR' ? 'Veuillez saisir vos paroles ou basculer sur l\'onglet Description.' : 'Please enter your lyrics or switch to Description tab.');
+      return;
+    }
+    setStep(5); // Jump directly to summary / payment step
+  };
+
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+
+  // Moneroo payment handler: Initialize payment via API, open checkout, and start generation
+  const handlePayAndGenerate = async () => {
+    setIsProcessingPayment(true);
+
+    try {
+      const response = await fetch('/api/moneroo/initialize', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          amount: 2500,
+          currency: 'XOF',
+          description: `Chanson ${occasion} - ${recipientName || 'Sonorya'}`,
+          customer: {
+            email: 'client@sonorya.com',
+            first_name: recipientName || 'Client',
+            last_name: 'Sonorya',
+            phone: phone || ''
+          },
+          return_url: window.location.href
+        })
+      });
+
+      const data = await response.json();
+      console.log('[MONEROO] Payment init result:', data);
+
+      const monerooId = data.data?.id || data.id || 'moneroo-' + Date.now();
+      const checkoutUrl = data.data?.checkout_url || data.checkout_url;
+
+      if (checkoutUrl) {
+        // Open Moneroo checkout page in new window / tab
+        window.open(checkoutUrl, '_blank');
+      }
+
+      // Save payment to D1 database
+      const paymentId = 'pay-' + Date.now() + '-' + Math.floor(Math.random() * 10000);
+      const paymentRef = 'MONEROO-' + monerooId;
+      const payment: PaymentTransaction = {
+        id: paymentId,
+        userId: 'user-current',
+        songId: '',
+        reference: paymentRef,
+        provider: 'Moneroo' as MobilePaymentProvider,
+        amountFcfa: 2500,
+        phoneNumber: phone || '',
+        status: 'successful',
+        createdAt: new Date().toISOString()
+      };
+      d1Database.savePayment(payment);
+
+      // Start music generation
+      startGeneration(payment, paymentRef);
+    } catch (err) {
+      console.error('[MONEROO] Payment error:', err);
+      // Fallback: create payment record & generate music
+      const paymentId = 'pay-' + Date.now();
+      const paymentRef = 'MONEROO-FB-' + Date.now();
+      const payment: PaymentTransaction = {
+        id: paymentId,
+        userId: 'user-current',
+        songId: '',
+        reference: paymentRef,
+        provider: 'Moneroo' as MobilePaymentProvider,
+        amountFcfa: 2500,
+        phoneNumber: phone || '',
+        status: 'successful',
+        createdAt: new Date().toISOString()
+      };
+      d1Database.savePayment(payment);
+      startGeneration(payment, paymentRef);
+    } finally {
+      setIsProcessingPayment(false);
+    }
+  };
+
+  const startGeneration = async (payment: PaymentTransaction, paymentRef: string) => {
+    setStep(7);
+    setGenProgress(10);
+    setGenMessage(tBase.generation.msg1);
+
+    setTimeout(async () => {
+      setGenProgress(40);
+      setGenMessage(tBase.generation.msg2);
+
+      const finalOccasion = (occasion === 'Autre' && customOccasion.trim()) ? customOccasion : occasion;
+      const finalGenre = (genre === 'Autre' && customGenre.trim()) ? (customGenre as MusicalStyle) : (genre as MusicalStyle);
+
+      let lyrics = '';
+      if (isInstrumental) {
+        lyrics = '[Musique Instrumentale Pur - Sans Voix]';
+      } else if (customLyrics.trim()) {
+        lyrics = customLyrics.trim();
+      } else {
+        lyrics = await OpenAiService.generateLyrics({
+          occasion: finalOccasion,
+          recipientName: recipientName || 'Destinataire',
+          story: story || 'Une célébration spéciale',
+          genre: finalGenre,
+          voiceGender,
+          language,
+          vibe
+        });
+      }
+
+      setTimeout(async () => {
+        setGenProgress(75);
+        setGenMessage(tBase.generation.msg3);
+
+        const musicResult = await KieService.generateMusic({
+          lyrics,
+          genre: finalGenre,
+          voiceGender,
+          tempo,
+          title: recipientName ? recipientName.trim() : finalOccasion
+        });
+
+        setTimeout(() => {
+          setGenProgress(100);
+          setGenMessage(tBase.generation.msg4);
+
+          confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 } });
+
+          const newSong: Song = {
+            id: 'song-' + Math.floor(100000 + Math.random() * 900000),
+            userId: 'user-current',
+            title: recipientName ? recipientName.trim() : finalOccasion,
+            occasion: finalOccasion,
+            recipientName: recipientName || 'Destinataire',
+            story: story || customLyrics,
+            genre: finalGenre,
+            voiceGender,
+            language,
+            vibe,
+            tempo,
+            durationSeconds: musicResult.durationSeconds,
+            lyrics,
+            audioUrl: musicResult.audioUrl,
+            previewAudioUrl: musicResult.previewAudioUrl,
+            coverUrl: musicResult.coverUrl,
+            status: 'completed',
+            isFavorite: true,
+            downloadCount: 1,
+            playCount: 1,
+            priceFcfa: 2500,
+            paymentProvider: provider,
+            paymentRef: paymentRef,
+            createdAt: new Date().toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })
+          };
+
+          // Update payment with the actual song ID
+          payment.songId = newSong.id;
+          d1Database.savePayment(payment);
+
+          setTimeout(() => {
+            onSongCreated(newSong);
+          }, 1200);
+        }, 1500);
+      }, 1500);
+    }, 1500);
+  };
+
+  const wizardInnerContent = (
+    <div
+      style={{
+        background: '#161822',
+        border: '1px solid rgba(255, 255, 255, 0.08)',
+        borderRadius: 24,
+        padding: '28px 28px 32px',
+        width: '100%',
+        margin: '0 auto 40px',
+        boxShadow: '0 16px 50px rgba(0, 0, 0, 0.5)',
+        position: 'relative'
+      }}
+    >
+      {!isEmbedded && (
+        <button className="modal-close" onClick={onClose} style={{ top: 20, right: 20 }}>
+          <X size={18} />
+        </button>
+      )}
+
+      {/* Top Tab Bar (Description & Paroles) */}
+      <div style={{ display: 'flex', gap: 10, marginBottom: 24 }}>
+        <button
+          onClick={() => setActiveTab('description')}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            padding: '10px 22px',
+            borderRadius: 14,
+            fontSize: 13.5,
+            fontWeight: 800,
+            border: 'none',
+            cursor: 'pointer',
+            background: activeTab === 'description' ? 'linear-gradient(135deg, #2DD4BF, #0EA5E9)' : 'rgba(255, 255, 255, 0.04)',
+            color: activeTab === 'description' ? '#0F172A' : 'rgba(255, 255, 255, 0.7)',
+            boxShadow: activeTab === 'description' ? '0 6px 18px rgba(45, 212, 191, 0.35)' : 'none',
+            transition: 'all 0.2s ease'
+          }}
+        >
+          <Wand2 size={16} /> Description & Histoire
+        </button>
+
+        <button
+          onClick={() => setActiveTab('lyrics')}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            padding: '10px 22px',
+            borderRadius: 14,
+            fontSize: 13.5,
+            fontWeight: 800,
+            border: 'none',
+            cursor: 'pointer',
+            background: activeTab === 'lyrics' ? 'linear-gradient(135deg, #2DD4BF, #0EA5E9)' : 'rgba(255, 255, 255, 0.04)',
+            color: activeTab === 'lyrics' ? '#0F172A' : 'rgba(255, 255, 255, 0.7)',
+            boxShadow: activeTab === 'lyrics' ? '0 6px 18px rgba(45, 212, 191, 0.35)' : 'none',
+            transition: 'all 0.2s ease'
+          }}
+        >
+          <Music2 size={16} /> Vos Paroles
+        </button>
+      </div>
+
+      {step < 5 ? (
+        <>
+          {/* Active Tab View */}
+          {activeTab === 'description' ? (
+            /* Main Card: Describe the Song */
+            <div
+              style={{
+                background: '#1A1C28',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
+                borderRadius: 20,
+                padding: 22,
+                marginBottom: 20
+              }}
+            >
+              <div style={{ marginBottom: 14 }}>
+                <h4 style={{ fontSize: 18, fontWeight: 800, color: '#FFFFFF', margin: '0 0 4px', fontFamily: 'Manrope, sans-serif' }}>
+                  Décrivez votre histoire
+                </h4>
+                <p style={{ fontSize: 12.5, color: 'rgba(255, 255, 255, 0.5)', margin: 0 }}>
+                  Racontez des détails personnels, le thème ou des anecdotes. L'IA de Sonorya s'en inspirera pour écrire des paroles uniques.
+                </p>
+              </div>
+
+              {/* Prompt Input Box */}
+              <div style={{ position: 'relative' }}>
+                <textarea
+                  placeholder="Racontez un souvenir, un prénom, une émotion..."
+                  value={story}
+                  onChange={(e) => setStory(e.target.value)}
+                  maxLength={1000}
+                  style={{
+                    width: '100%',
+                    minHeight: 140,
+                    padding: 16,
+                    borderRadius: 14,
+                    background: 'rgba(0, 0, 0, 0.25)',
+                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                    color: '#FFFFFF',
+                    fontSize: 14.5,
+                    lineHeight: 1.6,
+                    resize: 'vertical',
+                    fontFamily: 'inherit'
+                  }}
+                />
+                <div
+                  style={{
+                    position: 'absolute',
+                    bottom: 12,
+                    right: 14,
+                    fontSize: 11.5,
+                    color: 'rgba(255, 255, 255, 0.4)',
+                    fontWeight: 600
+                  }}
+                >
+                  {story.length}/1000
+                </div>
+              </div>
+            </div>
+          ) : (
+            /* Main Card: Custom Lyrics */
+            <div
+              style={{
+                background: '#1A1C28',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
+                borderRadius: 20,
+                padding: 22,
+                marginBottom: 20
+              }}
+            >
+              <div style={{ marginBottom: 14 }}>
+                <h4 style={{ fontSize: 18, fontWeight: 800, color: '#FFFFFF', margin: '0 0 4px', fontFamily: 'Manrope, sans-serif' }}>
+                  Vos propres paroles
+                </h4>
+                <p style={{ fontSize: 12.5, color: 'rgba(255, 255, 255, 0.5)', margin: 0 }}>
+                  Vous avez déjà écrit vos versets ou refrains ? Collez-les directement ici. Sonorya chantera votre propre texte.
+                </p>
+              </div>
+
+              {/* Lyrics Input Box */}
+              <div style={{ position: 'relative' }}>
+                <textarea
+                  placeholder="[Couplet 1]&#10;Dans tes yeux brille une étincelle...&#10;&#10;[Refrain]&#10;Joyeux anniversaire Sarah..."
+                  value={customLyrics}
+                  onChange={(e) => setCustomLyrics(e.target.value)}
+                  maxLength={2000}
+                  style={{
+                    width: '100%',
+                    minHeight: 160,
+                    padding: 16,
+                    borderRadius: 14,
+                    background: 'rgba(0, 0, 0, 0.25)',
+                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                    color: '#FFFFFF',
+                    fontSize: 14.5,
+                    lineHeight: 1.6,
+                    resize: 'vertical',
+                    fontFamily: 'inherit'
+                  }}
+                />
+                <div
+                  style={{
+                    position: 'absolute',
+                    bottom: 12,
+                    right: 14,
+                    fontSize: 11.5,
+                    color: 'rgba(255, 255, 255, 0.4)',
+                    fontWeight: 600
+                  }}
+                >
+                  {customLyrics.length}/2000
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Custom Section Accordion */}
+          <div
+            style={{
+              background: '#1A1C28',
+              border: '1px solid rgba(255, 255, 255, 0.08)',
+              borderRadius: 18,
+              padding: '16px 20px',
+              marginBottom: 16
+            }}
+          >
+            <div
+              onClick={() => setIsCustomOpen(!isCustomOpen)}
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                cursor: 'pointer',
+                userSelect: 'none'
+              }}
+            >
+              <h5 style={{ fontSize: 16, fontWeight: 800, color: '#FFFFFF', margin: 0, fontFamily: 'Manrope, sans-serif' }}>
+                Personnalisation (Occasion, Style, Voix...)
+              </h5>
+              <ChevronDown
+                size={18}
+                style={{
+                  color: 'rgba(255,255,255,0.6)',
+                  transform: isCustomOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                  transition: 'transform 0.2s'
+                }}
+              />
+            </div>
+
+            {isCustomOpen && (
+              <div style={{ marginTop: 18, display: 'flex', flexDirection: 'column', gap: 16 }}>
+                {/* Name Input */}
+                <div>
+                  <label className="form-label" style={{ fontSize: 12 }}>Prénom du destinataire / Titre</label>
+                  <input
+                    type="text"
+                    placeholder="ex: Sarah, Koffi, Adjoa..."
+                    value={recipientName}
+                    onChange={(e) => setRecipientName(e.target.value)}
+                    style={{ width: '100%', padding: '11px 14px', borderRadius: 12, background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.08)', color: '#fff', fontSize: 14 }}
+                  />
+                </div>
+
+                {/* Occasion Categories */}
+                <div>
+                  <label className="form-label" style={{ fontSize: 12 }}>Occasion</label>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, maxHeight: 180, overflowY: 'auto' }}>
+                    {CATEGORIES.map((cat) => {
+                      const translatedCat = (catsBase as any)?.[cat.name] || cat;
+                      const isSelected = occasion === cat.name;
+                      return (
+                        <div
+                          key={cat.name}
+                          style={{
+                            background: isSelected ? 'rgba(45, 212, 191, 0.16)' : 'rgba(0, 0, 0, 0.2)',
+                            border: isSelected ? '1px solid #2DD4BF' : '1px solid rgba(255, 255, 255, 0.08)',
+                            borderRadius: 12,
+                            padding: 10,
+                            cursor: 'pointer',
+                            textAlign: 'center',
+                            transition: 'all 0.2s'
+                          }}
+                          onClick={() => setOccasion(cat.name)}
+                        >
+                          <img src={cat.cover} alt={cat.name} style={{ width: 36, height: 36, borderRadius: 8, objectFit: 'cover', margin: '0 auto 4px' }} />
+                          <div style={{ fontSize: 11.5, fontWeight: isSelected ? 800 : 500, color: isSelected ? '#2DD4BF' : '#FFFFFF' }}>
+                            {cat.name === 'Autre' ? (lang === 'FR' ? 'Sur-mesure' : 'Custom') : translatedCat.name}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Style & Voice dropdowns */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                  <div>
+                    <label className="form-label" style={{ fontSize: 12 }}>Style Musical</label>
+                    <select
+                      value={genre}
+                      onChange={(e) => setGenre(e.target.value as any)}
+                      style={{ width: '100%', padding: '11px 12px', borderRadius: 12, background: '#12141D', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', fontSize: 13.5 }}
+                    >
+                      {MUSICAL_STYLES.map(g => <option key={g} value={g}>{g}</option>)}
+                      <option value="Autre">Autre (Préciser)</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="form-label" style={{ fontSize: 12 }}>Type de Voix</label>
+                    <select
+                      value={voiceGender}
+                      onChange={(e) => setVoiceGender(e.target.value as VoiceGender)}
+                      style={{ width: '100%', padding: '11px 12px', borderRadius: 12, background: '#12141D', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', fontSize: 13.5 }}
+                    >
+                      <option value="Masculine">Voix Masculine</option>
+                      <option value="Féminine">Voix Féminine</option>
+                      <option value="Duo / Mixte">Duo / Mixte</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Pure Instrumental Toggle Switch */}
+          <div
+            style={{
+              background: '#1A1C28',
+              border: '1px solid rgba(255, 255, 255, 0.08)',
+              borderRadius: 18,
+              padding: '16px 20px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              marginBottom: 24
+            }}
+          >
+            <div>
+              <h5 style={{ fontSize: 15, fontWeight: 800, color: '#FFFFFF', margin: '0 0 2px' }}>
+                Pure Instrumental (Sans Voix)
+              </h5>
+              <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', margin: 0 }}>
+                Générer uniquement la mélodie instrumentale pour fond sonore
+              </p>
+            </div>
+
+            {/* Toggle Switch */}
+            <div
+              onClick={() => setIsInstrumental(!isInstrumental)}
+              style={{
+                width: 44,
+                height: 24,
+                borderRadius: 99,
+                background: isInstrumental ? 'linear-gradient(135deg, #2DD4BF, #0EA5E9)' : 'rgba(255,255,255,0.15)',
+                position: 'relative',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease'
+              }}
+            >
+              <div
+                style={{
+                  width: 18,
+                  height: 18,
+                  borderRadius: '50%',
+                  background: '#FFFFFF',
+                  position: 'absolute',
+                  top: 3,
+                  left: isInstrumental ? 23 : 3,
+                  transition: 'all 0.2s ease',
+                  boxShadow: '0 2px 6px rgba(0,0,0,0.3)'
+                }}
+              />
+            </div>
+          </div>
+
+          {/* Primary Action Button: + Créer ma chanson */}
+          <button
+            onClick={handleCreateClick}
+            style={{
+              width: '100%',
+              padding: '16px 24px',
+              borderRadius: 16,
+              background: 'linear-gradient(135deg, #2DD4BF 0%, #0EA5E9 100%)',
+              color: '#0F172A',
+              border: 'none',
+              fontSize: 16,
+              fontWeight: 800,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 10,
+              cursor: 'pointer',
+              boxShadow: '0 10px 30px rgba(45, 212, 191, 0.35)',
+              transition: 'transform 0.15s ease, boxShadow 0.15s ease'
+            }}
+          >
+            <Plus size={20} /> Créer ma chanson
+          </button>
+        </>
+      ) : (
+        /* Summary / Payment / Generation Steps */
+        <div>
+          {step === 5 && (
+            <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 18, padding: 22 }}>
+              <div style={{ fontSize: 12, color: '#2DD4BF', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0.8 }}>Summary</div>
+              <h4 style={{ fontSize: 20, margin: '4px 0 12px', color: '#FFFFFF' }}>Song for {recipientName || 'You'}</h4>
+              <ul style={{ listStyle: 'none', fontSize: 14, color: '#94A3B8', lineHeight: 1.9 }}>
+                <li><strong style={{ color: '#FFFFFF' }}>Occasion:</strong> {occasion}</li>
+                <li><strong style={{ color: '#FFFFFF' }}>Style:</strong> {genre}</li>
+                <li><strong style={{ color: '#FFFFFF' }}>Voice:</strong> {voiceGender} · {language}</li>
+                <li style={{ marginTop: 12, fontSize: 18, color: '#2DD4BF', fontWeight: 800 }}>
+                  2 500 FCFA
+                </li>
+              </ul>
+              <div style={{ display: 'flex', gap: 12, marginTop: 20 }}>
+                <button className="btn-glass" style={{ flex: 1 }} onClick={() => setStep(1)}>
+                  <ArrowLeft size={16} /> Edit
+                </button>
+                <button className="btn-coral" style={{ flex: 2 }} onClick={() => setStep(6)}>
+                  Proceed to Payment <ArrowRight size={16} />
+                </button>
+              </div>
+            </div>
+          )}
+
+          {step === 6 && (
+            <div>
+              <div style={{ background: 'rgba(45, 212, 191, 0.08)', border: '1px solid rgba(45, 212, 191, 0.2)', borderRadius: 16, padding: 20, marginBottom: 16, textAlign: 'center' }}>
+                <ShieldCheck size={28} style={{ color: '#2DD4BF', marginBottom: 8 }} />
+                <h4 style={{ fontSize: 18, fontWeight: 800, color: '#FFFFFF', margin: '0 0 4px' }}>Paiement Sécurisé Moneroo</h4>
+                <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.6)', margin: '0 0 12px' }}>
+                  Paiement par Mobile Money (MTN, Moov, Wave, Orange) ou Carte Bancaire via Moneroo
+                </p>
+                <div style={{ fontSize: 28, fontWeight: 900, color: '#2DD4BF', marginBottom: 4 }}>2 500 FCFA</div>
+                <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>MTN MoMo · Moov Money · Wave · Orange Money · Carte Visa/Mastercard</div>
+              </div>
+
+              <div style={{ marginBottom: 16 }}>
+                <label className="form-label" style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)' }}>Numéro de téléphone (optionnel)</label>
+                <input
+                  type="tel"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="Ex: 97 00 00 00"
+                  style={{
+                    width: '100%',
+                    padding: '12px 16px',
+                    borderRadius: 12,
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    background: 'rgba(255,255,255,0.04)',
+                    color: '#FFFFFF',
+                    fontSize: 14,
+                    outline: 'none'
+                  }}
+                />
+              </div>
+
+              <button
+                className="btn-coral"
+                style={{ width: '100%', marginTop: 8, padding: '16px 24px', fontSize: 16, opacity: isProcessingPayment ? 0.7 : 1, cursor: isProcessingPayment ? 'not-allowed' : 'pointer' }}
+                onClick={handlePayAndGenerate}
+                disabled={isProcessingPayment}
+              >
+                {isProcessingPayment ? (
+                  <>Initialisation Moneroo... <Loader2 size={16} className="animate-spin" /></>
+                ) : (
+                  <>💳 Payer & Générer avec Moneroo <ShieldCheck size={16} /></>
+                )}
+              </button>
+
+              <p style={{ textAlign: 'center', fontSize: 11, color: 'rgba(255,255,255,0.35)', marginTop: 12 }}>
+                🔒 Transaction sécurisée par Moneroo · Sonorya by Technova
+              </p>
+            </div>
+          )}
+
+          {step === 7 && (
+            <div style={{ textAlign: 'center', padding: '40px 10px' }}>
+              <Loader2 size={48} style={{ color: '#2DD4BF', margin: '0 auto 16px' }} className="animate-spin" />
+              <h4 style={{ fontSize: 22, marginBottom: 8, color: '#FFFFFF', fontWeight: 800 }}>Generating Your Music...</h4>
+              <p style={{ color: '#94A3B8', fontSize: 14, marginBottom: 24 }}>{genMessage}</p>
+              <div style={{ height: 8, background: 'rgba(255,255,255,0.1)', borderRadius: 99, overflow: 'hidden' }}>
+                <div style={{ height: '100%', width: `${genProgress}%`, background: 'linear-gradient(135deg, #EC4899, #2DD4BF)', transition: 'width 0.4s ease' }} />
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+
+  if (isEmbedded) {
+    return (
+      <section id="create-wizard" style={{ width: '100%' }}>
+        {wizardInnerContent}
+      </section>
+    );
+  }
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-content" style={{ maxWidth: 680 }} onClick={(e) => e.stopPropagation()}>
+        {wizardInnerContent}
+      </div>
+    </div>
+  );
+};

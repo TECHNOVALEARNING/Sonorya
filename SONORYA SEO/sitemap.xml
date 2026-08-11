@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml">
+  <url>
+    <loc>https://sonorya.technova.com/</loc>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://sonorya.technova.com/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://sonorya.technova.com/en/"/>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>https://sonorya.technova.com/en/</loc>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://sonorya.technova.com/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://sonorya.technova.com/en/"/>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+  </url>
+  <url><loc>https://sonorya.technova.com/mariage</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://sonorya.technova.com/en/wedding</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://sonorya.technova.com/anniversaire</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://sonorya.technova.com/en/birthday</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://sonorya.technova.com/naissance</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://sonorya.technova.com/en/new-baby</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://sonorya.technova.com/entreprise</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://sonorya.technova.com/en/business</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://sonorya.technova.com/blog</loc><changefreq>weekly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://sonorya.technova.com/faq</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
+</urlset>

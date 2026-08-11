@@ -1,0 +1,11 @@
+{
+  "name": "sonorya-by-technova",
+  "compatibility_date": "2026-08-10",
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "sonorya-db",
+      "database_id": "c662159a-4425-4557-9087-f4e3390209be"
+    }
+  ]
+}
