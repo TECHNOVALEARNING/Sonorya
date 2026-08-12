@@ -21,7 +21,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onSuccess, initia
   const [fullName, setFullName] = useState('');
   const [error, setError] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
@@ -32,7 +32,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onSuccess, initia
     }
 
     if (mode === 'login') {
-      const result = authRepository.loginWithEmail(email, password);
+      const result = await authRepository.loginWithEmail(email, password);
       if (result.error === 'invalid_password') {
         setError(t('auth.errorInvalidPassword'));
         return;
@@ -44,7 +44,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onSuccess, initia
     }
 
     if (mode === 'signup') {
-      const result = authRepository.signupWithEmail(email, password, fullName);
+      const result = await authRepository.signupWithEmail(email, password, fullName);
       if (result.error === 'email_taken') {
         setError(t('auth.errorEmailTaken'));
         return;
@@ -58,20 +58,15 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onSuccess, initia
 
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
-  const handleSocial = (provider: 'google' | 'apple') => {
+  const handleSocial = async (provider: 'google' | 'apple') => {
     setIsGoogleLoading(true);
     triggerGoogleSignIn(
-      (googleUserPayload) => {
-        setIsGoogleLoading(false);
-        const loggedUser = authRepository.loginWithGooglePayload(googleUserPayload);
-        showToast(`Bienvenue, ${loggedUser.fullName} !`, 'success');
-        onSuccess(loggedUser);
+      () => {
+        // Redirection en cours...
       },
       (errMessage) => {
         setIsGoogleLoading(false);
-        const fallbackUser = authRepository.loginWithProvider(provider);
-        showToast('Connexion Google réussie !', 'success');
-        onSuccess(fallbackUser);
+        showToast(errMessage, 'error');
       }
     );
   };

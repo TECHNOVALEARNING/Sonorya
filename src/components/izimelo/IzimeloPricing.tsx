@@ -4,9 +4,10 @@ import { useTranslation } from '../../i18n/LanguageContext';
 
 interface IzimeloPricingProps {
   onOpenCreate: () => void;
+  onSelectPlan?: (planId: 'single' | 'trio' | 'prestige') => void;
 }
 
-export const IzimeloPricing: React.FC<IzimeloPricingProps> = ({ onOpenCreate }) => {
+export const IzimeloPricing: React.FC<IzimeloPricingProps> = ({ onOpenCreate, onSelectPlan }) => {
   const { lang } = useTranslation();
 
   const plans = [
@@ -80,7 +81,7 @@ export const IzimeloPricing: React.FC<IzimeloPricingProps> = ({ onOpenCreate }) 
         letterSpacing: '0.05em',
         marginBottom: 16
       }}>
-        <Sparkles size={14} />
+        <img src="/images/sonorya-app-logo.png" alt="Sonorya" style={{ width: 16, height: 16, borderRadius: 4, objectFit: 'cover' }} />
         <span>{lang === 'FR' ? 'Tarifs & Formules' : 'Pricing & Plans'}</span>
       </div>
 
@@ -180,7 +181,7 @@ export const IzimeloPricing: React.FC<IzimeloPricingProps> = ({ onOpenCreate }) 
                   border: plan.popular ? 'none' : '1px solid rgba(255,255,255,0.12)',
                   boxShadow: plan.popular ? '0 8px 24px rgba(45, 212, 191, 0.35)' : 'none'
                 }}
-                onClick={onOpenCreate}
+                onClick={() => onSelectPlan ? onSelectPlan(plan.id as any) : onOpenCreate()}
               >
                 {plan.cta} <ArrowRight size={16} />
               </button>

@@ -254,7 +254,7 @@ export const LyricsDisplayPanel: React.FC<LyricsDisplayPanelProps> = ({
               {currentSong ? (
                 <Music2 size={24} style={{ color: '#F5B978' }} />
               ) : (
-                <Sparkles size={24} style={{ color: '#2DD4BF' }} />
+                <img src="/images/sonorya-app-logo.png" alt="Sonorya" style={{ width: 28, height: 28, borderRadius: 6, objectFit: 'cover' }} />
               )}
             </div>
             {currentSong ? (

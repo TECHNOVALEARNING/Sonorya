@@ -56,7 +56,7 @@ export const AudioPreviewModal: React.FC<AudioPreviewModalProps> = ({
 
         <div style={{ textAlign: 'center', marginBottom: 16 }}>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'rgba(47,217,196,0.15)', color: 'var(--teal)', padding: '4px 12px', borderRadius: 99, fontSize: 11.5, fontWeight: 700, textTransform: 'uppercase', marginBottom: 10 }}>
-            <Sparkles size={14} /> Musique & Pochette Générées par l'IA
+            <img src="/images/sonorya-app-logo.png" alt="Sonorya" style={{ width: 14, height: 14, borderRadius: 3, objectFit: 'cover' }} /> Musique & Pochette Générées par l'IA
           </div>
           <h3 style={{ fontFamily: 'Fraunces', fontSize: 24, marginBottom: 4 }}>
             Extrait IA pour "{recipientName}"

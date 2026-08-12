@@ -116,7 +116,7 @@ export const HomePage: React.FC<HomePageProps> = ({
               style={{ padding: '8px 14px', fontSize: 13 }}
               onClick={() => onOpenWizard(undefined, style)}
             >
-              <Sparkles size={14} className="text-coral" />
+              <Music size={14} className="text-coral" />
               {style}
             </button>
           ))}

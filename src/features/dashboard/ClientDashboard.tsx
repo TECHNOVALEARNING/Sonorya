@@ -21,6 +21,7 @@ interface ClientDashboardProps {
   onUpdateUser: (updatedUser: Partial<UserProfile>) => void;
   initialView?: string;
   onBackToLanding?: () => void;
+  onOpenRechargeCredits?: () => void;
 }
 
 export const ClientDashboard: React.FC<ClientDashboardProps> = ({ 
@@ -37,7 +38,8 @@ export const ClientDashboard: React.FC<ClientDashboardProps> = ({
   onPlaySong,
   onUpdateUser,
   initialView = 'home',
-  onBackToLanding
+  onBackToLanding,
+  onOpenRechargeCredits
 }) => {
   const [currentView, setCurrentView] = useState(initialView);
   const [draftInfo, setDraftInfo] = useState<{ title?: string; lyrics?: string; genre?: string }>({});
@@ -109,6 +111,7 @@ export const ClientDashboard: React.FC<ClientDashboardProps> = ({
               isEmbedded={true}
               user={user}
               onUpdateUser={onUpdateUser}
+              onOpenRechargeCredits={onOpenRechargeCredits}
               onClose={() => setCurrentView('home')}
               onSongCreated={(newSong) => {
                 onSongCreated(newSong);

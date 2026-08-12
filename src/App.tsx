@@ -16,6 +16,7 @@ import { SongWizard } from './features/wizard/SongWizard';
 import { AudioPreviewModal } from './components/AudioPreviewModal';
 import { PaymentModal } from './components/PaymentModal';
 import { OrderHistoryModal } from './components/OrderHistoryModal';
+import { CreditPurchaseModal } from './components/CreditPurchaseModal';
 import { AuthModal } from './components/auth/AuthModal';
 import { AudioPlayer } from './components/player/AudioPlayer';
 import { AdminDashboard } from './features/admin/AdminDashboard';
@@ -33,26 +34,19 @@ type LandingView = 'home' | 'contact' | 'terms' | 'privacy';
 
 export const App: React.FC = () => {
   const [user, setUser] = useState<UserProfile | null>(() => authRepository.getCurrentUser());
+  
+  useEffect(() => {
+    const unsubscribe = authRepository.subscribe((updatedUser) => {
+      setUser(updatedUser);
+    });
+    return () => unsubscribe();
+  }, []);
+
   const { showToast } = useToast();
   const { lang, setLang } = useTranslation();
   const [landingView, setLandingView] = useState<LandingView>('home');
 
-  const [orders, setOrders] = useState<Song[]>(() => {
-    try {
-      const saved = localStorage.getItem('sonorya_d1_songs') || localStorage.getItem('melodia_songs_repo');
-      const parsed: Song[] = saved ? JSON.parse(saved) : songRepository.getAll();
-      // Clean mismatched lyrics from old API-generated songs
-      for (const song of parsed) {
-        const isApiSong = song.audioUrl && song.audioUrl.startsWith('http') && !song.audioUrl.startsWith('/');
-        if (isApiSong && song.lyrics && !localStorage.getItem('sonorya_lyrics_migration_v2')) {
-          song.lyrics = '';
-        }
-      }
-      return parsed;
-    } catch (e) {
-      return songRepository.getAll();
-    }
-  });
+  const [orders, setOrders] = useState<Song[]>([]);
 
   useEffect(() => {
     d1Database.getSongs().then((savedSongs: Song[]) => {
@@ -66,6 +60,7 @@ export const App: React.FC = () => {
   const [dashboardView, setDashboardView] = useState<string>('home');
   const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [showCreditModal, setShowCreditModal] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
@@ -79,15 +74,7 @@ export const App: React.FC = () => {
 
   const currentSong = orders.length > 0 ? orders[currentSongIndex] : null;
 
-  useEffect(() => {
-    try {
-      localStorage.setItem('sonorya_d1_songs', JSON.stringify(orders));
-      localStorage.setItem('melodia_songs_repo', JSON.stringify(orders));
-      localStorage.setItem('melodia_orders', JSON.stringify(orders));
-    } catch (e) {
-      // ignore
-    }
-  }, [orders]);
+
 
   const handleOpenWizard = () => {
     if (!user) {
@@ -177,6 +164,13 @@ export const App: React.FC = () => {
     sessionStorage.removeItem('sonorya_app_view');
   };
 
+  // Auto-redirect admin user if already logged in as admin
+  useEffect(() => {
+    if (user?.role === 'admin') {
+      setAppView('admin');
+    }
+  }, [user]);
+
   if (appView === 'admin' && user?.role === 'admin') {
     return <AdminDashboard user={user} onLogout={handleLogout} onBackToLanding={() => setAppView('landing')} />;
   }
@@ -200,7 +194,21 @@ export const App: React.FC = () => {
           onUpdateUser={(updated) => setUser({ ...user, ...updated })}
           initialView={dashboardView}
           onBackToLanding={() => setAppView('landing')}
+          onOpenRechargeCredits={() => setShowCreditModal(true)}
         />
+
+        {/* Credit Purchase Modal */}
+        {showCreditModal && (
+          <CreditPurchaseModal
+            user={user}
+            onClose={() => setShowCreditModal(false)}
+            onSuccess={(updatedUser) => setUser(updatedUser)}
+            onOpenLogin={() => {
+              setAuthMode('login');
+              setShowAuthModal(true);
+            }}
+          />
+        )}
 
         {/* Preview Modal before Payment */}
         {showPreviewModal && orderDraft && (
@@ -248,11 +256,21 @@ export const App: React.FC = () => {
               <IzimeloHero onOpenCreate={handleOpenWizard} />
               <OccasionsTicker />
               <IzimeloHowItWorks />
-              <IzimeloPricing onOpenCreate={handleOpenWizard} />
               <IzimeloDemos />
               <IzimeloCoverFlow />
               <IzimeloTestimonials />
               <IzimeloFAQ />
+              <IzimeloPricing
+                onOpenCreate={handleOpenWizard}
+                onSelectPlan={() => {
+                  if (!user) {
+                    setAuthMode('signup');
+                    setShowAuthModal(true);
+                  } else {
+                    setShowCreditModal(true);
+                  }
+                }}
+              />
             </>
           )}
 
@@ -271,6 +289,19 @@ export const App: React.FC = () => {
 
         <LandingFooter onNavigate={(view) => setLandingView(view as LandingView)} onOpenCreate={handleOpenWizard} />
       </div>
+
+      {/* Credit Purchase Modal */}
+      {showCreditModal && (
+        <CreditPurchaseModal
+          user={user}
+          onClose={() => setShowCreditModal(false)}
+          onSuccess={(updatedUser) => setUser(updatedUser)}
+          onOpenLogin={() => {
+            setAuthMode('login');
+            setShowAuthModal(true);
+          }}
+        />
+      )}
 
       {/* Preview Modal before Payment */}
       {showPreviewModal && orderDraft && (

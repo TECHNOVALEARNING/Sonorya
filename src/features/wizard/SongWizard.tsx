@@ -19,6 +19,7 @@ interface SongWizardProps {
   onDraftChange?: (draft: { title?: string; lyrics?: string; genre?: string }) => void;
   user?: UserProfile | null;
   onUpdateUser?: (updated: Partial<UserProfile>) => void;
+  onOpenRechargeCredits?: () => void;
 }
 
 export const SongWizard: React.FC<SongWizardProps> = ({
@@ -29,7 +30,8 @@ export const SongWizard: React.FC<SongWizardProps> = ({
   isEmbedded = true,
   onDraftChange,
   user,
-  onUpdateUser
+  onUpdateUser,
+  onOpenRechargeCredits
 }) => {
   const [activeTab, setActiveTab] = useState<'description' | 'lyrics'>('description');
   const [isCustomOpen, setIsCustomOpen] = useState(true);
@@ -306,21 +308,70 @@ export const SongWizard: React.FC<SongWizardProps> = ({
   const wizardInnerContent = (
     <div
       style={{
-        background: '#161822',
-        border: '1px solid rgba(255, 255, 255, 0.08)',
-        borderRadius: 24,
-        padding: '28px 28px 32px',
+        background: 'linear-gradient(180deg, rgba(22, 25, 38, 0.96) 0%, rgba(14, 17, 27, 0.98) 100%)',
+        border: '1px solid rgba(255, 255, 255, 0.09)',
+        borderRadius: 28,
+        padding: '32px 32px 36px',
         width: '100%',
         margin: '0 auto 40px',
-        boxShadow: '0 16px 50px rgba(0, 0, 0, 0.5)',
-        position: 'relative'
+        boxShadow: '0 24px 80px rgba(0, 0, 0, 0.65)',
+        position: 'relative',
+        backdropFilter: 'blur(20px)',
+        WebkitBackdropFilter: 'blur(20px)'
       }}
     >
       {!isEmbedded && (
-        <button className="modal-close" onClick={onClose} style={{ top: 20, right: 20 }}>
+        <button 
+          className="modal-close" 
+          onClick={onClose} 
+          style={{ 
+            position: 'absolute', 
+            top: 22, 
+            right: 22, 
+            background: 'rgba(255, 255, 255, 0.06)', 
+            border: '1px solid rgba(255, 255, 255, 0.1)', 
+            color: '#FFF', 
+            width: 36, 
+            height: 36, 
+            borderRadius: '50%', 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center', 
+            cursor: 'pointer' 
+          }}
+        >
           <X size={18} />
         </button>
       )}
+
+      {/* Top Visual Stepper Header */}
+      <div style={{ marginBottom: 28 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#2DD4BF', boxShadow: '0 0 10px #2DD4BF' }} />
+            <span style={{ fontSize: 12, fontWeight: 800, color: '#2DD4BF', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+              {step === 7 ? 'Génération IA en cours' : step === 5 ? 'Étape Finale' : 'Création Sur-Mesure'}
+            </span>
+          </div>
+          <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', fontWeight: 700 }}>
+            {step === 7 ? '100%' : step === 5 ? 'Récapitulatif' : 'Assistant Sonorya'}
+          </span>
+        </div>
+
+        {/* Progress Bar Line */}
+        <div style={{ height: 4, background: 'rgba(255, 255, 255, 0.06)', borderRadius: 99, overflow: 'hidden' }}>
+          <div 
+            style={{ 
+              height: '100%', 
+              width: step === 7 ? `${genProgress}%` : step === 5 ? '90%' : '50%', 
+              background: 'linear-gradient(90deg, #2DD4BF 0%, #0EA5E9 100%)', 
+              borderRadius: 99,
+              transition: 'width 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
+              boxShadow: '0 0 12px rgba(45, 212, 191, 0.5)'
+            }} 
+          />
+        </div>
+      </div>
 
       {/* Top Tab Bar (Description & Paroles) */}
       <div style={{ display: 'flex', gap: 10, marginBottom: 24 }}>
@@ -330,15 +381,17 @@ export const SongWizard: React.FC<SongWizardProps> = ({
             display: 'flex',
             alignItems: 'center',
             gap: 8,
-            padding: '10px 22px',
+            padding: '11px 22px',
             borderRadius: 14,
             fontSize: 13.5,
             fontWeight: 800,
             border: 'none',
             cursor: 'pointer',
-            background: activeTab === 'description' ? 'linear-gradient(135deg, #2DD4BF, #0EA5E9)' : 'rgba(255, 255, 255, 0.04)',
+            background: activeTab === 'description' 
+              ? 'linear-gradient(135deg, #2DD4BF 0%, #0EA5E9 100%)' 
+              : 'rgba(255, 255, 255, 0.035)',
             color: activeTab === 'description' ? '#0F172A' : 'rgba(255, 255, 255, 0.7)',
-            boxShadow: activeTab === 'description' ? '0 6px 18px rgba(45, 212, 191, 0.35)' : 'none',
+            boxShadow: activeTab === 'description' ? '0 6px 20px rgba(45, 212, 191, 0.35)' : 'none',
             transition: 'all 0.2s ease'
           }}
         >
@@ -351,19 +404,21 @@ export const SongWizard: React.FC<SongWizardProps> = ({
             display: 'flex',
             alignItems: 'center',
             gap: 8,
-            padding: '10px 22px',
+            padding: '11px 22px',
             borderRadius: 14,
             fontSize: 13.5,
             fontWeight: 800,
             border: 'none',
             cursor: 'pointer',
-            background: activeTab === 'lyrics' ? 'linear-gradient(135deg, #2DD4BF, #0EA5E9)' : 'rgba(255, 255, 255, 0.04)',
+            background: activeTab === 'lyrics' 
+              ? 'linear-gradient(135deg, #2DD4BF 0%, #0EA5E9 100%)' 
+              : 'rgba(255, 255, 255, 0.035)',
             color: activeTab === 'lyrics' ? '#0F172A' : 'rgba(255, 255, 255, 0.7)',
-            boxShadow: activeTab === 'lyrics' ? '0 6px 18px rgba(45, 212, 191, 0.35)' : 'none',
+            boxShadow: activeTab === 'lyrics' ? '0 6px 20px rgba(45, 212, 191, 0.35)' : 'none',
             transition: 'all 0.2s ease'
           }}
         >
-          <Music2 size={16} /> Vos Paroles
+          <Music2 size={16} /> Vos Paroles Propres
         </button>
       </div>
 
@@ -374,19 +429,19 @@ export const SongWizard: React.FC<SongWizardProps> = ({
             /* Main Card: Describe the Song */
             <div
               style={{
-                background: '#1A1C28',
-                border: '1px solid rgba(255, 255, 255, 0.08)',
-                borderRadius: 20,
-                padding: 22,
+                background: 'rgba(255, 255, 255, 0.025)',
+                border: '1px solid rgba(255, 255, 255, 0.07)',
+                borderRadius: 22,
+                padding: 24,
                 marginBottom: 20
               }}
             >
-              <div style={{ marginBottom: 14 }}>
+              <div style={{ marginBottom: 16 }}>
                 <h4 style={{ fontSize: 18, fontWeight: 800, color: '#FFFFFF', margin: '0 0 4px', fontFamily: 'Manrope, sans-serif' }}>
                   Décrivez votre histoire
                 </h4>
-                <p style={{ fontSize: 12.5, color: 'rgba(255, 255, 255, 0.5)', margin: 0 }}>
-                  Racontez des détails personnels, le thème ou des anecdotes. L'IA de Sonorya s'en inspirera pour écrire des paroles uniques.
+                <p style={{ fontSize: 13, color: 'rgba(255, 255, 255, 0.55)', margin: 0, lineHeight: 1.5 }}>
+                  Racontez des souvenirs personnels, le prénom de la personne ou des émotions. L'IA de Sonorya composera des paroles authentiques.
                 </p>
               </div>
 
@@ -400,22 +455,24 @@ export const SongWizard: React.FC<SongWizardProps> = ({
                   style={{
                     width: '100%',
                     minHeight: 140,
-                    padding: 16,
-                    borderRadius: 14,
-                    background: 'rgba(0, 0, 0, 0.25)',
-                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                    padding: 18,
+                    borderRadius: 16,
+                    background: 'rgba(0, 0, 0, 0.3)',
+                    border: '1px solid rgba(255, 255, 255, 0.09)',
                     color: '#FFFFFF',
                     fontSize: 14.5,
-                    lineHeight: 1.6,
+                    lineHeight: 1.65,
                     resize: 'vertical',
-                    fontFamily: 'inherit'
+                    fontFamily: 'inherit',
+                    outline: 'none',
+                    transition: 'border-color 0.2s ease'
                   }}
                 />
                 <div
                   style={{
                     position: 'absolute',
-                    bottom: 12,
-                    right: 14,
+                    bottom: 14,
+                    right: 16,
                     fontSize: 11.5,
                     color: 'rgba(255, 255, 255, 0.4)',
                     fontWeight: 600
@@ -429,19 +486,19 @@ export const SongWizard: React.FC<SongWizardProps> = ({
             /* Main Card: Custom Lyrics */
             <div
               style={{
-                background: '#1A1C28',
-                border: '1px solid rgba(255, 255, 255, 0.08)',
-                borderRadius: 20,
-                padding: 22,
+                background: 'rgba(255, 255, 255, 0.025)',
+                border: '1px solid rgba(255, 255, 255, 0.07)',
+                borderRadius: 22,
+                padding: 24,
                 marginBottom: 20
               }}
             >
-              <div style={{ marginBottom: 14 }}>
+              <div style={{ marginBottom: 16 }}>
                 <h4 style={{ fontSize: 18, fontWeight: 800, color: '#FFFFFF', margin: '0 0 4px', fontFamily: 'Manrope, sans-serif' }}>
                   Vos propres paroles
                 </h4>
-                <p style={{ fontSize: 12.5, color: 'rgba(255, 255, 255, 0.5)', margin: 0 }}>
-                  Vous avez déjà écrit vos versets ou refrains ? Collez-les directement ici. Sonorya chantera votre propre texte.
+                <p style={{ fontSize: 13, color: 'rgba(255, 255, 255, 0.55)', margin: 0, lineHeight: 1.5 }}>
+                  Collez vos couplets ou refrains rédigés par vos soins. L'IA chantera votre texte mot pour mot.
                 </p>
               </div>
 
@@ -455,22 +512,24 @@ export const SongWizard: React.FC<SongWizardProps> = ({
                   style={{
                     width: '100%',
                     minHeight: 160,
-                    padding: 16,
-                    borderRadius: 14,
-                    background: 'rgba(0, 0, 0, 0.25)',
-                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                    padding: 18,
+                    borderRadius: 16,
+                    background: 'rgba(0, 0, 0, 0.3)',
+                    border: '1px solid rgba(255, 255, 255, 0.09)',
                     color: '#FFFFFF',
                     fontSize: 14.5,
-                    lineHeight: 1.6,
+                    lineHeight: 1.65,
                     resize: 'vertical',
-                    fontFamily: 'inherit'
+                    fontFamily: 'inherit',
+                    outline: 'none',
+                    transition: 'border-color 0.2s ease'
                   }}
                 />
                 <div
                   style={{
                     position: 'absolute',
-                    bottom: 12,
-                    right: 14,
+                    bottom: 14,
+                    right: 16,
                     fontSize: 11.5,
                     color: 'rgba(255, 255, 255, 0.4)',
                     fontWeight: 600
@@ -485,10 +544,10 @@ export const SongWizard: React.FC<SongWizardProps> = ({
           {/* Custom Section Accordion */}
           <div
             style={{
-              background: '#1A1C28',
-              border: '1px solid rgba(255, 255, 255, 0.08)',
-              borderRadius: 18,
-              padding: '16px 20px',
+              background: 'rgba(255, 255, 255, 0.025)',
+              border: '1px solid rgba(255, 255, 255, 0.07)',
+              borderRadius: 20,
+              padding: '18px 22px',
               marginBottom: 16
             }}
           >
@@ -519,19 +578,32 @@ export const SongWizard: React.FC<SongWizardProps> = ({
               <div style={{ marginTop: 18, display: 'flex', flexDirection: 'column', gap: 16 }}>
                 {/* Name Input */}
                 <div>
-                  <label className="form-label" style={{ fontSize: 12 }}>Prénom du destinataire / Titre</label>
+                  <label className="form-label" style={{ fontSize: 12, fontWeight: 700, color: 'rgba(255,255,255,0.7)' }}>
+                    Prénom du destinataire / Titre
+                  </label>
                   <input
                     type="text"
                     placeholder="ex: Sarah, Koffi, Adjoa..."
                     value={recipientName}
                     onChange={(e) => setRecipientName(e.target.value)}
-                    style={{ width: '100%', padding: '11px 14px', borderRadius: 12, background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.08)', color: '#fff', fontSize: 14 }}
+                    style={{ 
+                      width: '100%', 
+                      padding: '12px 16px', 
+                      borderRadius: 14, 
+                      background: 'rgba(0,0,0,0.3)', 
+                      border: '1px solid rgba(255,255,255,0.09)', 
+                      color: '#fff', 
+                      fontSize: 14.5,
+                      outline: 'none'
+                    }}
                   />
                 </div>
 
                 {/* Occasion Categories */}
                 <div>
-                  <label className="form-label" style={{ fontSize: 12 }}>Occasion</label>
+                  <label className="form-label" style={{ fontSize: 12, fontWeight: 700, color: 'rgba(255,255,255,0.7)' }}>
+                    Occasion
+                  </label>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, maxHeight: 180, overflowY: 'auto' }}>
                     {CATEGORIES.map((cat) => {
                       const translatedCat = (catsBase as any)?.[cat.name] || cat;
@@ -540,18 +612,21 @@ export const SongWizard: React.FC<SongWizardProps> = ({
                         <div
                           key={cat.name}
                           style={{
-                            background: isSelected ? 'rgba(45, 212, 191, 0.16)' : 'rgba(0, 0, 0, 0.2)',
-                            border: isSelected ? '1px solid #2DD4BF' : '1px solid rgba(255, 255, 255, 0.08)',
-                            borderRadius: 12,
+                            background: isSelected 
+                              ? 'linear-gradient(180deg, rgba(45, 212, 191, 0.18) 0%, rgba(14, 165, 233, 0.08) 100%)' 
+                              : 'rgba(0, 0, 0, 0.25)',
+                            border: isSelected ? '2px solid #2DD4BF' : '1px solid rgba(255, 255, 255, 0.08)',
+                            borderRadius: 14,
                             padding: 10,
                             cursor: 'pointer',
                             textAlign: 'center',
-                            transition: 'all 0.2s'
+                            transition: 'all 0.2s ease',
+                            transform: isSelected ? 'translateY(-1px)' : 'none'
                           }}
                           onClick={() => setOccasion(cat.name)}
                         >
-                          <img src={cat.cover} alt={cat.name} style={{ width: 36, height: 36, borderRadius: 8, objectFit: 'cover', margin: '0 auto 4px' }} />
-                          <div style={{ fontSize: 11.5, fontWeight: isSelected ? 800 : 500, color: isSelected ? '#2DD4BF' : '#FFFFFF' }}>
+                          <img src={cat.cover} alt={cat.name} style={{ width: 36, height: 36, borderRadius: 10, objectFit: 'cover', margin: '0 auto 6px' }} />
+                          <div style={{ fontSize: 11.5, fontWeight: isSelected ? 800 : 600, color: isSelected ? '#2DD4BF' : '#FFFFFF' }}>
                             {cat.name === 'Autre' ? (lang === 'FR' ? 'Sur-mesure' : 'Custom') : translatedCat.name}
                           </div>
                         </div>
@@ -563,11 +638,22 @@ export const SongWizard: React.FC<SongWizardProps> = ({
                 {/* Style & Voice dropdowns */}
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                   <div>
-                    <label className="form-label" style={{ fontSize: 12 }}>Style Musical</label>
+                    <label className="form-label" style={{ fontSize: 12, fontWeight: 700, color: 'rgba(255,255,255,0.7)' }}>
+                      Style Musical
+                    </label>
                     <select
                       value={genre}
                       onChange={(e) => setGenre(e.target.value as any)}
-                      style={{ width: '100%', padding: '11px 12px', borderRadius: 12, background: '#12141D', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', fontSize: 13.5 }}
+                      style={{ 
+                        width: '100%', 
+                        padding: '12px 14px', 
+                        borderRadius: 14, 
+                        background: '#12141D', 
+                        border: '1px solid rgba(255,255,255,0.1)', 
+                        color: '#fff', 
+                        fontSize: 14,
+                        outline: 'none'
+                      }}
                     >
                       {MUSICAL_STYLES.map(g => <option key={g} value={g}>{g}</option>)}
                       <option value="Autre">Autre (Préciser)</option>
@@ -575,11 +661,22 @@ export const SongWizard: React.FC<SongWizardProps> = ({
                   </div>
 
                   <div>
-                    <label className="form-label" style={{ fontSize: 12 }}>Type de Voix</label>
+                    <label className="form-label" style={{ fontSize: 12, fontWeight: 700, color: 'rgba(255,255,255,0.7)' }}>
+                      Type de Voix
+                    </label>
                     <select
                       value={voiceGender}
                       onChange={(e) => setVoiceGender(e.target.value as VoiceGender)}
-                      style={{ width: '100%', padding: '11px 12px', borderRadius: 12, background: '#12141D', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', fontSize: 13.5 }}
+                      style={{ 
+                        width: '100%', 
+                        padding: '12px 14px', 
+                        borderRadius: 14, 
+                        background: '#12141D', 
+                        border: '1px solid rgba(255,255,255,0.1)', 
+                        color: '#fff', 
+                        fontSize: 14,
+                        outline: 'none'
+                      }}
                     >
                       <option value="Masculine">Voix Masculine</option>
                       <option value="Féminine">Voix Féminine</option>
@@ -594,10 +691,10 @@ export const SongWizard: React.FC<SongWizardProps> = ({
           {/* Pure Instrumental Toggle Switch */}
           <div
             style={{
-              background: '#1A1C28',
-              border: '1px solid rgba(255, 255, 255, 0.08)',
-              borderRadius: 18,
-              padding: '16px 20px',
+              background: 'rgba(255, 255, 255, 0.025)',
+              border: '1px solid rgba(255, 255, 255, 0.07)',
+              borderRadius: 20,
+              padding: '18px 22px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
@@ -608,7 +705,7 @@ export const SongWizard: React.FC<SongWizardProps> = ({
               <h5 style={{ fontSize: 15, fontWeight: 800, color: '#FFFFFF', margin: '0 0 2px' }}>
                 Pure Instrumental (Sans Voix)
               </h5>
-              <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', margin: 0 }}>
+              <p style={{ fontSize: 12.5, color: 'rgba(255,255,255,0.5)', margin: 0 }}>
                 Générer uniquement la mélodie instrumentale pour fond sonore
               </p>
             </div>
@@ -617,26 +714,26 @@ export const SongWizard: React.FC<SongWizardProps> = ({
             <div
               onClick={() => setIsInstrumental(!isInstrumental)}
               style={{
-                width: 44,
-                height: 24,
+                width: 46,
+                height: 26,
                 borderRadius: 99,
                 background: isInstrumental ? 'linear-gradient(135deg, #2DD4BF, #0EA5E9)' : 'rgba(255,255,255,0.15)',
                 position: 'relative',
                 cursor: 'pointer',
-                transition: 'all 0.2s ease'
+                transition: 'all 0.25s ease'
               }}
             >
               <div
                 style={{
-                  width: 18,
-                  height: 18,
+                  width: 20,
+                  height: 20,
                   borderRadius: '50%',
                   background: '#FFFFFF',
                   position: 'absolute',
                   top: 3,
                   left: isInstrumental ? 23 : 3,
-                  transition: 'all 0.2s ease',
-                  boxShadow: '0 2px 6px rgba(0,0,0,0.3)'
+                  transition: 'all 0.25s ease',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.4)'
                 }}
               />
             </div>
@@ -647,8 +744,8 @@ export const SongWizard: React.FC<SongWizardProps> = ({
             onClick={handleCreateClick}
             style={{
               width: '100%',
-              padding: '16px 24px',
-              borderRadius: 16,
+              padding: '18px 24px',
+              borderRadius: 18,
               background: 'linear-gradient(135deg, #2DD4BF 0%, #0EA5E9 100%)',
               color: '#0F172A',
               border: 'none',
@@ -659,7 +756,7 @@ export const SongWizard: React.FC<SongWizardProps> = ({
               justifyContent: 'center',
               gap: 10,
               cursor: 'pointer',
-              boxShadow: '0 10px 30px rgba(45, 212, 191, 0.35)',
+              boxShadow: '0 12px 35px rgba(45, 212, 191, 0.35)',
               transition: 'transform 0.15s ease, boxShadow 0.15s ease'
             }}
           >
@@ -667,108 +764,140 @@ export const SongWizard: React.FC<SongWizardProps> = ({
           </button>
         </>
       ) : (
-        /* Summary / Payment / Generation Steps */
+        /* Summary & Generation Steps */
         <div>
           {step === 5 && (
-            <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 18, padding: 22 }}>
-              <div style={{ fontSize: 12, color: '#2DD4BF', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0.8 }}>Récapitulatif de la commande</div>
-              <h4 style={{ fontSize: 20, margin: '4px 0 12px', color: '#FFFFFF' }}>Musique pour {recipientName || 'Vous'}</h4>
-              <ul style={{ listStyle: 'none', fontSize: 14, color: '#94A3B8', lineHeight: 1.9, padding: 0 }}>
+            <div style={{ 
+              background: 'linear-gradient(180deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.015) 100%)', 
+              border: '1px solid rgba(255, 255, 255, 0.09)', 
+              borderRadius: 24, 
+              padding: 28 
+            }}>
+              <div style={{ fontSize: 12, color: '#2DD4BF', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 4 }}>
+                Récapitulatif de votre création
+              </div>
+              <h4 style={{ fontSize: 22, margin: '0 0 16px', color: '#FFFFFF', fontWeight: 800 }}>
+                Musique pour {recipientName || 'Vous'}
+              </h4>
+
+              <ul style={{ listStyle: 'none', fontSize: 14.5, color: 'rgba(255,255,255,0.8)', lineHeight: 2.1, padding: 0, marginBottom: 24 }}>
                 <li><strong style={{ color: '#FFFFFF' }}>Occasion:</strong> {occasion}</li>
                 <li><strong style={{ color: '#FFFFFF' }}>Style Musical:</strong> {genre}</li>
-                <li><strong style={{ color: '#FFFFFF' }}>Voix:</strong> {voiceGender} · {language}</li>
-                <li style={{ marginTop: 12, fontSize: 18, color: '#2DD4BF', fontWeight: 800 }}>
-                  Tarif : {userCredits > 0 ? '1 Crédit disponible (0 FCFA)' : '1 999 FCFA'}
-                </li>
+                <li><strong style={{ color: '#FFFFFF' }}>Voix & Langue:</strong> {voiceGender} · {language}</li>
               </ul>
-              <div style={{ display: 'flex', gap: 12, marginTop: 20 }}>
-                <button className="btn-glass" style={{ flex: 1 }} onClick={() => setStep(1)}>
+
+              {userCredits > 0 ? (
+                <div style={{ 
+                  background: 'linear-gradient(180deg, rgba(45, 212, 191, 0.14) 0%, rgba(14, 165, 233, 0.06) 100%)', 
+                  border: '1.5px solid #2DD4BF', 
+                  borderRadius: 20, 
+                  padding: 20, 
+                  marginBottom: 24, 
+                  textAlign: 'center',
+                  boxShadow: '0 8px 24px rgba(45, 212, 191, 0.15)'
+                }}>
+                  <img src="/images/sonorya-app-logo.png" alt="Sonorya" style={{ width: 26, height: 26, borderRadius: 6, marginBottom: 8, objectFit: 'cover' }} />
+                  <h4 style={{ fontSize: 17, fontWeight: 800, color: '#FFFFFF', margin: '0 0 4px' }}>
+                    Solde actuel : {userCredits} {userCredits > 1 ? 'crédits disponibles' : 'crédit disponible'}
+                  </h4>
+                  <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)', margin: 0 }}>
+                    1 crédit sera déduit de votre compte pour générer ce morceau.
+                  </p>
+                </div>
+              ) : (
+                <div style={{ 
+                  background: 'rgba(239, 68, 68, 0.08)', 
+                  border: '1px solid rgba(239, 68, 68, 0.3)', 
+                  borderRadius: 20, 
+                  padding: 20, 
+                  marginBottom: 24, 
+                  textAlign: 'center' 
+                }}>
+                  <h4 style={{ fontSize: 16, fontWeight: 800, color: '#F87171', margin: '0 0 4px' }}>
+                    Solde insuffisant : 0 crédit disponible
+                  </h4>
+                  <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)', margin: 0 }}>
+                    Veuillez recharger vos crédits de création sur votre compte pour lancer la génération.
+                  </p>
+                </div>
+              )}
+
+              <div style={{ display: 'flex', gap: 14 }}>
+                <button className="btn-glass" style={{ flex: 1, padding: '16px', borderRadius: 16 }} onClick={() => setStep(1)}>
                   <ArrowLeft size={16} /> Modifier
                 </button>
-                <button className="btn-coral" style={{ flex: 2 }} onClick={() => setStep(6)}>
-                  Passer au Paiement <ArrowRight size={16} />
-                </button>
+
+                {userCredits > 0 ? (
+                  <button 
+                    className="btn-coral" 
+                    style={{ 
+                      flex: 2, 
+                      padding: '16px 24px', 
+                      fontSize: 16, 
+                      fontWeight: 800,
+                      justifyContent: 'center', 
+                      borderRadius: 16,
+                      background: 'linear-gradient(135deg, #2DD4BF 0%, #0EA5E9 100%)',
+                      color: '#0F172A',
+                      boxShadow: '0 10px 30px rgba(45, 212, 191, 0.35)'
+                    }} 
+                    onClick={handleUseCredit}
+                  >
+                    🎵 Générer ma musique (1 crédit)
+                  </button>
+                ) : (
+                  <button 
+                    className="btn-emerald" 
+                    style={{ 
+                      flex: 2, 
+                      padding: '16px 24px', 
+                      fontSize: 16, 
+                      fontWeight: 800,
+                      justifyContent: 'center', 
+                      borderRadius: 16 
+                    }} 
+                    onClick={() => onOpenRechargeCredits ? onOpenRechargeCredits() : setStep(1)}
+                  >
+                    🛒 Recharger mes crédits (Dès 1 999 F)
+                  </button>
+                )}
               </div>
             </div>
           )}
 
-          {step === 6 && (
-            <div>
-              {/* Option to use credit if available on user profile */}
-              {userCredits > 0 ? (
-                <div style={{ background: 'rgba(45, 212, 191, 0.12)', border: '1.5px solid #2DD4BF', borderRadius: 16, padding: 20, marginBottom: 16, textAlign: 'center' }}>
-                  <Sparkles size={28} style={{ color: '#2DD4BF', marginBottom: 6 }} />
-                  <h4 style={{ fontSize: 17, fontWeight: 800, color: '#FFFFFF', margin: '0 0 4px' }}>
-                    Vous avez {userCredits} {userCredits > 1 ? 'crédits disponibles' : 'crédit disponible'} !
-                  </h4>
-                  <p style={{ fontSize: 12.5, color: 'rgba(255,255,255,0.7)', margin: '0 0 14px' }}>
-                    Utilisez 1 crédit de votre compte pour générer cette musique sans payer.
-                  </p>
-                  <button className="btn-emerald" style={{ width: '100%', padding: '15px', fontSize: 15, justifyContent: 'center' }} onClick={handleUseCredit}>
-                    ⚡ Générer avec 1 Crédit (0 FCFA) <Sparkles size={16} />
-                  </button>
-                </div>
-              ) : (
-                /* Simple, clean checkout for the song being created */
-                <div>
-                  <div style={{ background: 'rgba(45, 212, 191, 0.08)', border: '1px solid rgba(45, 212, 191, 0.2)', borderRadius: 16, padding: 20, marginBottom: 16, textAlign: 'center' }}>
-                    <ShieldCheck size={28} style={{ color: '#2DD4BF', marginBottom: 8 }} />
-                    <h4 style={{ fontSize: 18, fontWeight: 800, color: '#FFFFFF', margin: '0 0 4px' }}>Paiement Sécurisé Moneroo</h4>
-                    <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.6)', margin: '0 0 10px' }}>
-                      Paiement par Mobile Money (MTN, Moov, Wave, Orange) ou Carte Bancaire
-                    </p>
-                    <div style={{ fontSize: 28, fontWeight: 900, color: '#2DD4BF', marginBottom: 4 }}>1 999 FCFA</div>
-                    <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>MTN MoMo · Moov Money · Wave · Orange Money · Carte Visa/Mastercard</div>
-                  </div>
-
-                  <div style={{ marginBottom: 16 }}>
-                    <label className="form-label" style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)' }}>Numéro de téléphone (optionnel)</label>
-                    <input
-                      type="tel"
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                      placeholder="Ex: 97 00 00 00"
-                      style={{
-                        width: '100%',
-                        padding: '12px 16px',
-                        borderRadius: 12,
-                        border: '1px solid rgba(255,255,255,0.1)',
-                        background: 'rgba(255,255,255,0.04)',
-                        color: '#FFFFFF',
-                        fontSize: 14,
-                        outline: 'none'
-                      }}
-                    />
-                  </div>
-
-                  <button
-                    className="btn-coral"
-                    style={{ width: '100%', marginTop: 8, padding: '16px 24px', fontSize: 16, opacity: isProcessingPayment ? 0.7 : 1, cursor: isProcessingPayment ? 'not-allowed' : 'pointer' }}
-                    onClick={handlePayAndGenerate}
-                    disabled={isProcessingPayment}
-                  >
-                    {isProcessingPayment ? (
-                      <>Initialisation Moneroo... <Loader2 size={16} className="animate-spin" /></>
-                    ) : (
-                      <>💳 Payer 1 999 FCFA & Générer <ShieldCheck size={16} /></>
-                    )}
-                  </button>
-
-                  <p style={{ textAlign: 'center', fontSize: 11, color: 'rgba(255,255,255,0.35)', marginTop: 12 }}>
-                    🔒 Transaction sécurisée par Moneroo · Sonorya by Technova
-                  </p>
-                </div>
-              )}
-            </div>
-          )}
-
           {step === 7 && (
-            <div style={{ textAlign: 'center', padding: '40px 10px' }}>
-              <Loader2 size={48} style={{ color: '#2DD4BF', margin: '0 auto 16px' }} className="animate-spin" />
-              <h4 style={{ fontSize: 22, marginBottom: 8, color: '#FFFFFF', fontWeight: 800 }}>Generating Your Music...</h4>
-              <p style={{ color: '#94A3B8', fontSize: 14, marginBottom: 24 }}>{genMessage}</p>
-              <div style={{ height: 8, background: 'rgba(255,255,255,0.1)', borderRadius: 99, overflow: 'hidden' }}>
-                <div style={{ height: '100%', width: `${genProgress}%`, background: 'linear-gradient(135deg, #EC4899, #2DD4BF)', transition: 'width 0.4s ease' }} />
+            <div style={{ textAlign: 'center', padding: '48px 16px' }}>
+              <div style={{ position: 'relative', width: 80, height: 80, margin: '0 auto 24px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div style={{ 
+                  position: 'absolute', 
+                  inset: 0, 
+                  borderRadius: '50%', 
+                  background: 'linear-gradient(135deg, rgba(45,212,191,0.2) 0%, rgba(14,165,233,0.1) 100%)',
+                  border: '2px solid #2DD4BF',
+                  boxShadow: '0 0 30px rgba(45, 212, 191, 0.4)',
+                  animation: 'pulse 2s infinite ease-in-out'
+                }} />
+                <Loader2 size={40} style={{ color: '#2DD4BF', zIndex: 2 }} className="animate-spin" />
+              </div>
+
+              <h4 style={{ fontSize: 24, marginBottom: 8, color: '#FFFFFF', fontWeight: 800, letterSpacing: '-0.01em' }}>
+                Génération de votre chanson en cours...
+              </h4>
+              <p style={{ color: 'rgba(255,255,255,0.65)', fontSize: 14.5, marginBottom: 28, maxWidth: 420, margin: '0 auto 28px', lineHeight: 1.5 }}>
+                {genMessage}
+              </p>
+
+              <div style={{ height: 10, background: 'rgba(255,255,255,0.08)', borderRadius: 99, overflow: 'hidden', maxWidth: 440, margin: '0 auto' }}>
+                <div 
+                  style={{ 
+                    height: '100%', 
+                    width: `${genProgress}%`, 
+                    background: 'linear-gradient(90deg, #2DD4BF 0%, #0EA5E9 100%)', 
+                    borderRadius: 99,
+                    transition: 'width 0.5s ease',
+                    boxShadow: '0 0 16px rgba(45, 212, 191, 0.6)'
+                  }} 
+                />
               </div>
             </div>
           )}

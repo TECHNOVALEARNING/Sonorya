@@ -24,8 +24,16 @@ export const IzimeloHeader: React.FC<IzimeloHeaderProps> = ({
       <div className="wrap header-inner">
         <a href="#" className="logo" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <img src="/images/sonorya-app-logo.png" alt="Sonorya Logo" style={{ width: 34, height: 34, borderRadius: 8, objectFit: 'cover' }} />
-          <div>
-            Son<span className="accent">o</span>rya <span style={{ fontSize: 13, color: 'var(--gold)' }}>by Technova</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div>
+              Son<span className="accent">o</span>rya <span style={{ fontSize: 13, color: 'var(--gold)' }}>by Technova</span>
+            </div>
+            <span style={{ display: 'inline-flex', alignItems: 'flex-end', gap: 3, height: 16, marginLeft: 2 }}>
+              <i style={{ width: 3, height: '60%', background: 'linear-gradient(180deg, #2DD4BF, #0EA5E9)', borderRadius: 2, display: 'inline-block', animation: 'wave-bounce 1.2s ease-in-out -1.0s infinite' }}></i>
+              <i style={{ width: 3, height: '90%', background: 'linear-gradient(180deg, #2DD4BF, #0EA5E9)', borderRadius: 2, display: 'inline-block', animation: 'wave-bounce 1.2s ease-in-out -0.7s infinite' }}></i>
+              <i style={{ width: 3, height: '100%', background: 'linear-gradient(180deg, #2DD4BF, #0EA5E9)', borderRadius: 2, display: 'inline-block', animation: 'wave-bounce 1.2s ease-in-out -0.4s infinite' }}></i>
+              <i style={{ width: 3, height: '75%', background: 'linear-gradient(180deg, #2DD4BF, #0EA5E9)', borderRadius: 2, display: 'inline-block', animation: 'wave-bounce 1.2s ease-in-out -0.2s infinite' }}></i>
+            </span>
           </div>
         </a>
 
@@ -72,7 +80,7 @@ export const IzimeloHeader: React.FC<IzimeloHeaderProps> = ({
         </nav>
 
         {/* Mobile hamburger */}
-        <button className="mobile-toggle" onClick={() => setMobileOpen(!mobileOpen)} aria-label="Toggle menu">
+        <button className="mobile-menu-toggle" onClick={() => setMobileOpen(!mobileOpen)} aria-label="Toggle menu">
           {mobileOpen ? <X size={22} /> : <Menu size={22} />}
         </button>
       </div>
