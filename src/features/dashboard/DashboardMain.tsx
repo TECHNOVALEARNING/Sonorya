@@ -352,94 +352,73 @@ export const DashboardMain: React.FC<MainProps> = ({ user, orders, onPlaySong, o
             </p>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 24 }}>
-            {[
-              { 
-                id: 'alb-1', 
-                title: 'Album Anniversaires & Fêtes', 
-                occasion: 'Anniversaire',
-                cover: '/images/cover_anniversaire_highlife.png',
-                songs: filteredOrders.filter(s => s.occasion === 'Anniversaire' || s.occasion === 'Naissance')
-              },
-              { 
-                id: 'alb-2', 
-                title: 'Album Amour & Mariage', 
-                occasion: 'Mariage',
-                cover: '/images/cover_mariage_afrobeat.png',
-                songs: filteredOrders.filter(s => s.occasion === 'Mariage' || s.occasion === 'Déclaration d\'amour' || s.genre === 'Zouk')
-              },
-              { 
-                id: 'alb-3', 
-                title: 'Album Réussite & Félicitations', 
-                occasion: 'Diplôme / BAC',
-                cover: '/images/cover_bac_gospel.png',
-                songs: filteredOrders.filter(s => s.occasion === 'Diplôme / BAC' || s.occasion === 'Succès / Félicitations')
-              },
-              { 
-                id: 'alb-4', 
-                title: 'Ma Compilation Personnelle', 
-                occasion: 'Compilation',
-                cover: '/images/cover_rnb_afro.png',
-                songs: filteredOrders
-              }
-            ].map((album) => (
-              <div 
-                key={album.id} 
-                className="dashboard-card" 
-                style={{ 
-                  background: 'rgba(255,255,255,0.03)', 
-                  border: '1px solid rgba(255,255,255,0.08)', 
-                  borderRadius: 20, 
-                  padding: 18,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'space-between'
-                }}
-              >
-                <div>
-                  <div style={{ position: 'relative', borderRadius: 14, overflow: 'hidden', marginBottom: 14 }}>
-                    <img 
-                      src={album.cover} 
-                      alt={album.title} 
-                      style={{ aspectRatio: '1', width: '100%', objectFit: 'cover', display: 'block' }} 
-                    />
-                    <div style={{ position: 'absolute', bottom: 10, right: 10, background: 'rgba(15, 23, 42, 0.85)', backdropFilter: 'blur(8px)', padding: '4px 10px', borderRadius: 99, fontSize: 11, fontWeight: 800, color: '#2DD4BF' }}>
-                      {album.songs.length} {album.songs.length > 1 ? 'titres' : 'titre'}
+          {filteredOrders.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '60px 20px', background: 'rgba(255,255,255,0.02)', borderRadius: 24, border: '1px dashed rgba(255,255,255,0.1)' }}>
+              <Disc size={48} color="rgba(255,255,255,0.2)" style={{ marginBottom: 16 }} />
+              <h3 style={{ fontSize: 20, color: '#fff', marginBottom: 8 }}>Aucun album pour le moment</h3>
+              <p style={{ color: 'var(--ivory-dim)', fontSize: 14, marginBottom: 24, maxWidth: 400, margin: '0 auto 24px' }}>
+                Vos albums apparaîtront ici et seront automatiquement classés par style musical dès que vous aurez créé vos premières chansons.
+              </p>
+              <button className="btn-coral" onClick={onOpenCreate}>
+                <Plus size={16} /> Créer ma première chanson
+              </button>
+            </div>
+          ) : (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 24 }}>
+              {Array.from(
+                filteredOrders.reduce((acc, order) => {
+                  const genre = order.genre || 'Divers';
+                  if (!acc.has(genre)) acc.set(genre, []);
+                  acc.get(genre)!.push(order);
+                  return acc;
+                }, new Map<string, typeof filteredOrders>())
+              ).map(([genre, songs]) => (
+                <div 
+                  key={genre} 
+                  className="dashboard-card" 
+                  style={{ 
+                    background: 'rgba(255,255,255,0.03)', 
+                    border: '1px solid rgba(255,255,255,0.08)', 
+                    borderRadius: 20, 
+                    padding: 18,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'space-between'
+                  }}
+                >
+                  <div>
+                    <div style={{ position: 'relative', borderRadius: 14, overflow: 'hidden', marginBottom: 14 }}>
+                      <img 
+                        src={songs[0].imageUrl || '/images/cover_rnb_afro.png'} 
+                        alt={`Album ${genre}`} 
+                        style={{ aspectRatio: '1', width: '100%', objectFit: 'cover', display: 'block' }} 
+                      />
+                      <div style={{ position: 'absolute', bottom: 10, right: 10, background: 'rgba(15, 23, 42, 0.85)', backdropFilter: 'blur(8px)', padding: '4px 10px', borderRadius: 99, fontSize: 11, fontWeight: 800, color: '#2DD4BF' }}>
+                        {songs.length} {songs.length > 1 ? 'titres' : 'titre'}
+                      </div>
                     </div>
+
+                    <h3 style={{ fontSize: 17, fontWeight: 800, color: '#FFFFFF', margin: '0 0 6px' }}>
+                      Album {genre}
+                    </h3>
+                    <p style={{ fontSize: 12.5, color: 'rgba(255,255,255,0.6)', margin: '0 0 16px', lineHeight: 1.4 }}>
+                      {songs.length} chanson(s) générée(s) dans le style {genre}.
+                    </p>
                   </div>
 
-                  <h3 style={{ fontSize: 17, fontWeight: 800, color: '#FFFFFF', margin: '0 0 6px' }}>
-                    {album.title}
-                  </h3>
-                  <p style={{ fontSize: 12.5, color: 'rgba(255,255,255,0.6)', margin: '0 0 16px', lineHeight: 1.4 }}>
-                    {album.songs.length > 0 
-                      ? `${album.songs.length} chanson(s) disponible(s) dans cet album.`
-                      : `Aucun titre créé pour cet événement pour le moment.`}
-                  </p>
-                </div>
-
-                <div style={{ display: 'flex', gap: 10 }}>
-                  {album.songs.length > 0 ? (
+                  <div style={{ display: 'flex', gap: 10 }}>
                     <button 
                       className="btn-coral" 
                       style={{ flex: 1, padding: '10px 14px', fontSize: 13, justifyContent: 'center' }}
-                      onClick={() => onPlaySong(album.songs[0])}
+                      onClick={() => onPlaySong(songs[0])}
                     >
                       <Play size={14} /> Écouter L'Album
                     </button>
-                  ) : (
-                    <button 
-                      className="btn-emerald" 
-                      style={{ flex: 1, padding: '10px 14px', fontSize: 13, justifyContent: 'center' }}
-                      onClick={onOpenCreate}
-                    >
-                      <Plus size={14} /> Créer un Titre
-                    </button>
-                  )}
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </>
       )}
 
