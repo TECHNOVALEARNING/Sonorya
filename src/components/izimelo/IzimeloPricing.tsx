@@ -1,6 +1,7 @@
 import React from 'react';
 import { Check, Sparkles, ArrowRight, ShieldCheck } from 'lucide-react';
 import { useTranslation } from '../../i18n/LanguageContext';
+import { usePricing } from '../../context/PricingContext';
 
 interface IzimeloPricingProps {
   onOpenCreate: () => void;
@@ -9,14 +10,20 @@ interface IzimeloPricingProps {
 
 export const IzimeloPricing: React.FC<IzimeloPricingProps> = ({ onOpenCreate, onSelectPlan }) => {
   const { lang } = useTranslation();
+  const { getPrice } = usePricing();
+
+  const singlePrice = getPrice(1999);
+  const trioPrice = getPrice(2999);
+  const prestigePrice = getPrice(7999);
 
   const plans = [
     {
       id: 'single',
       name: lang === 'FR' ? 'Chanson Unique' : 'Single Song',
       badge: lang === 'FR' ? 'Découverte' : 'Starter',
-      price: '1 999',
-      unitPrice: lang === 'FR' ? '1 999 FCFA / musique' : '1,999 FCFA / song',
+      price: singlePrice.formatted.replace(' FCFA', '').replace(' €', '').replace('$', ''),
+      currencySymbol: singlePrice.currency === 'XOF' ? 'FCFA' : singlePrice.currency === 'EUR' ? '€' : '$',
+      unitPrice: lang === 'FR' ? `${singlePrice.formatted} / musique` : `${singlePrice.formatted} / song`,
       desc: lang === 'FR' ? 'Idéal pour offrir une chanson personnalisée sur-mesure pour une occasion spéciale.' : 'Ideal for creating a custom personalized song for a special occasion.',
       popular: false,
       cta: lang === 'FR' ? 'Créer ma chanson' : 'Create my song',
@@ -32,8 +39,9 @@ export const IzimeloPricing: React.FC<IzimeloPricingProps> = ({ onOpenCreate, on
       id: 'trio',
       name: lang === 'FR' ? 'Pack 3 Musiques' : '3 Songs Pack',
       badge: lang === 'FR' ? '⭐ Le Plus Populaire' : '⭐ Most Popular',
-      price: '2 999',
-      unitPrice: lang === 'FR' ? '~1 000 FCFA / musique · Économie de 50%' : '~1,000 FCFA / song · 50% Savings',
+      price: trioPrice.formatted.replace(' FCFA', '').replace(' €', '').replace('$', ''),
+      currencySymbol: trioPrice.currency === 'XOF' ? 'FCFA' : trioPrice.currency === 'EUR' ? '€' : '$',
+      unitPrice: lang === 'FR' ? `~${getPrice(999).formatted} / musique · Économie de 50%` : `~${getPrice(999).formatted} / song · 50% Savings`,
       desc: lang === 'FR' ? 'La formule préférée ! Profitez de 3 créations musicales valables à vie sur votre compte.' : 'Our best-selling plan! Get 3 custom song credits with lifetime validity.',
       popular: true,
       cta: lang === 'FR' ? 'Commander le Pack Trio' : 'Get 3-Song Pack',
@@ -49,8 +57,9 @@ export const IzimeloPricing: React.FC<IzimeloPricingProps> = ({ onOpenCreate, on
       id: 'prestige',
       name: lang === 'FR' ? 'Pack 8 Musiques' : '8 Songs Pack',
       badge: lang === 'FR' ? '🔥 Meilleur Prix' : '🔥 Best Value',
-      price: '7 999',
-      unitPrice: lang === 'FR' ? '~1 000 FCFA / musique · Économie maximale' : '~1,000 FCFA / song · Maximum Savings',
+      price: prestigePrice.formatted.replace(' FCFA', '').replace(' €', '').replace('$', ''),
+      currencySymbol: prestigePrice.currency === 'XOF' ? 'FCFA' : prestigePrice.currency === 'EUR' ? '€' : '$',
+      unitPrice: lang === 'FR' ? `~${getPrice(999).formatted} / musique · Économie maximale` : `~${getPrice(999).formatted} / song · Maximum Savings`,
       desc: lang === 'FR' ? 'Le pack idéal pour les familles, mariages, anniversaires ou créateurs de contenu.' : 'The ultimate bundle for families, events, or content creators.',
       popular: false,
       cta: lang === 'FR' ? 'Profiter de l\'Offre Prestige' : 'Get Prestige Pack',
@@ -149,13 +158,14 @@ export const IzimeloPricing: React.FC<IzimeloPricingProps> = ({ onOpenCreate, on
               </div>
 
               {/* Price */}
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 4 }}>
-                <span style={{ fontSize: 44, fontWeight: 900, color: '#FFFFFF', letterSpacing: '-0.02em' }}>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: 8, justifyContent: 'center' }}>
+                {plan.currencySymbol === '$' && <span style={{ fontSize: 24, fontWeight: 700, color: '#FFFFFF' }}>$</span>}
+                <span style={{ fontSize: 46, fontWeight: 900, color: '#FFFFFF', lineHeight: 1, letterSpacing: '-0.03em' }}>
                   {plan.price}
                 </span>
-                <span style={{ fontSize: 18, fontWeight: 800, color: '#2DD4BF' }}>FCFA</span>
+                {plan.currencySymbol !== '$' && <span style={{ fontSize: 24, fontWeight: 700, color: '#FFFFFF' }}>{plan.currencySymbol}</span>}
               </div>
-              <div style={{ fontSize: 12, color: 'var(--gold)', fontWeight: 700, marginBottom: 16, textAlign: 'left' }}>
+              <div style={{ fontSize: 13, color: 'var(--teal)', fontWeight: 700, marginBottom: 24 }}>
                 {plan.unitPrice}
               </div>
 

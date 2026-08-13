@@ -1,8 +1,10 @@
 import React from 'react';
 import { Package, Check, ArrowRight } from 'lucide-react';
+import { usePricing } from '../../context/PricingContext';
 import { Occasion, MusicalStyle } from '../../types/melodia';
 
 interface PacksPageProps {
+  onBack?: () => void;
   onSelectPack: (occasion: Occasion, genre: MusicalStyle) => void;
 }
 
@@ -52,6 +54,8 @@ export const PACKS_DATA = [
 ];
 
 export const PacksPage: React.FC<PacksPageProps> = ({ onSelectPack }) => {
+  const { getPrice } = usePricing();
+
   return (
     <div>
       {/* Tarifs & Offres de Crédits */}
@@ -86,8 +90,8 @@ export const PacksPage: React.FC<PacksPageProps> = ({ onSelectPack }) => {
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 4 }}>
-                  <span style={{ fontSize: 32, fontWeight: 900, color: plan.isPopular ? '#2DD4BF' : '#FFFFFF' }}>{plan.price.toLocaleString()} FCFA</span>
-                  <span style={{ fontSize: 14, color: 'var(--ivory-muted)', textDecoration: 'line-through' }}>{plan.oldPrice.toLocaleString()} FCFA</span>
+                  <span style={{ fontSize: 32, fontWeight: 900, color: plan.isPopular ? '#2DD4BF' : '#FFFFFF' }}>{getPrice(plan.price).formatted}</span>
+                  <span style={{ fontSize: 14, color: 'var(--ivory-muted)', textDecoration: 'line-through' }}>{getPrice(plan.oldPrice).formatted}</span>
                 </div>
                 <div style={{ fontSize: 12, color: 'var(--gold)', fontWeight: 700, marginBottom: 16 }}>{plan.unitPrice}</div>
 
@@ -137,8 +141,8 @@ export const PacksPage: React.FC<PacksPageProps> = ({ onSelectPack }) => {
                 <p style={{ fontSize: 13, color: 'var(--ivory-dim)', marginBottom: 16, lineHeight: 1.5 }}>{pack.desc}</p>
 
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 16 }}>
-                  <span style={{ fontSize: 22, fontWeight: 700, color: 'var(--coral)' }}>{pack.price.toLocaleString()} FCFA</span>
-                  <span style={{ fontSize: 13, color: 'var(--ivory-muted)', textDecoration: 'line-through' }}>{pack.oldPrice.toLocaleString()} FCFA</span>
+                  <span style={{ fontSize: 22, fontWeight: 700, color: 'var(--coral)' }}>{getPrice(pack.price).formatted}</span>
+                  <span style={{ fontSize: 13, color: 'var(--ivory-muted)', textDecoration: 'line-through' }}>{getPrice(pack.oldPrice).formatted}</span>
                 </div>
               </div>
 

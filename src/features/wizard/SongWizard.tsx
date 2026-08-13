@@ -9,6 +9,7 @@ import confetti from 'canvas-confetti';
 import { useTranslation } from '../../i18n/LanguageContext';
 import { fr } from '../../i18n/translations/fr';
 import { en } from '../../i18n/translations/en';
+import { usePricing } from '../../context/PricingContext';
 
 interface SongWizardProps {
   initialOccasion?: Occasion;
@@ -58,6 +59,7 @@ export const SongWizard: React.FC<SongWizardProps> = ({
   
   const { t, lang } = useTranslation();
   const tBase = lang === 'FR' ? fr.wizard : en.wizard;
+  const { getPrice } = usePricing();
   const catsBase = lang === 'FR' ? fr.categories : en.categories;
 
   // Broadcast draft changes to right panel
@@ -92,11 +94,11 @@ export const SongWizard: React.FC<SongWizardProps> = ({
   const getPlanDetails = (plan: 'single' | 'trio' | 'prestige') => {
     switch (plan) {
       case 'trio':
-        return { amount: 2999, extraCredits: 2, label: 'Pack 3 Musiques (2 999 FCFA)' };
+        return { amount: getPrice(2999).amount, currency: getPrice(2999).currency, extraCredits: 2, label: `Pack 3 Musiques (${getPrice(2999).formatted})` };
       case 'prestige':
-        return { amount: 7999, extraCredits: 7, label: 'Pack 8 Musiques (7 999 FCFA)' };
+        return { amount: getPrice(7999).amount, currency: getPrice(7999).currency, extraCredits: 7, label: `Pack 8 Musiques (${getPrice(7999).formatted})` };
       default:
-        return { amount: 1999, extraCredits: 0, label: 'Chanson Unique (1 999 FCFA)' };
+        return { amount: getPrice(1999).amount, currency: getPrice(1999).currency, extraCredits: 0, label: `Chanson Unique (${getPrice(1999).formatted})` };
     }
   };
 
@@ -133,15 +135,15 @@ export const SongWizard: React.FC<SongWizardProps> = ({
   // Moneroo payment handler: Initialize payment via API, open checkout, and start generation
   const handlePayAndGenerate = async () => {
     setIsProcessingPayment(true);
-    const { amount, extraCredits, label } = getPlanDetails(selectedPlan);
+    const { amount, currency, extraCredits, label } = getPlanDetails(selectedPlan);
 
     try {
       const response = await fetch('/api/moneroo/initialize', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          amount: amount,
-          currency: 'XOF',
+          amount,
+          currency,
           description: `${label} - ${occasion} (${recipientName || 'Sonorya'})`,
           customer: {
             email: user?.email || 'client@sonorya.com',

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X, Smartphone, CreditCard, ShieldCheck, Check, Loader2, ArrowRight } from 'lucide-react';
 import { Order, MobilePaymentProvider } from '../types/melodia';
+import { usePricing } from '../context/PricingContext';
 import confetti from 'canvas-confetti';
 
 interface PaymentModalProps {
@@ -18,6 +19,9 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
   const [phone, setPhone] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [step, setStep] = useState<'method' | 'ussd_pending' | 'success'>('method');
+  const { getPrice } = usePricing();
+
+  const finalPrice = getPrice(orderDraft.priceFcfa || 2500);
 
   const handlePaySubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -85,7 +89,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
             </h3>
           </div>
           <div style={{ background: 'rgba(212,161,57,0.15)', border: '1px solid var(--gold)', color: 'var(--gold-light)', padding: '6px 12px', borderRadius: 8, fontSize: 12, fontWeight: 700 }}>
-            {orderDraft.priceFcfa?.toLocaleString()} FCFA
+            {finalPrice.formatted}
           </div>
         </div>
 
@@ -138,7 +142,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
             )}
 
             <button type="submit" className="cta">
-              Régler 2 500 FCFA
+              Régler {finalPrice.formatted}
               <ArrowRight size={18} />
             </button>
           </form>
@@ -149,7 +153,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
             <Loader2 size={42} className="text-gold animate-spin" style={{ margin: '0 auto 16px' }} />
             <h4 style={{ fontSize: 18, marginBottom: 8 }}>Validation en cours sur Moneroo...</h4>
             <p style={{ color: 'var(--ivory-dim)', fontSize: 14, maxWidth: 360, margin: '0 auto 16px' }}>
-              Veuillez approuver la demande de prélèvement de <strong>2 500 FCFA</strong> sur votre téléphone <strong>({phone || provider})</strong> via le menu USSD ou l'application.
+              Veuillez approuver la demande de prélèvement de <strong>{finalPrice.formatted}</strong> sur votre téléphone <strong>({phone || provider})</strong> via le menu USSD ou l'application.
             </p>
             <div style={{ fontSize: 12, color: 'var(--teal)' }}>
               🔒 Connexion directe avec le réseau {provider}

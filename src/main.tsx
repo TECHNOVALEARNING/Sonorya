@@ -6,6 +6,8 @@ import './index.css';
 import { ToastProvider } from './components/ToastProvider';
 import { LanguageProvider } from './i18n/LanguageContext';
 
+import { PricingProvider } from './context/PricingContext';
+
 // Purge temporaire de l'ancien système de cache (à retirer une fois la migration Supabase terminée)
 if (!localStorage.getItem('supabase_migration_cleared_v1')) {
   console.log('🧹 Purge complète des anciennes données locales pour la migration Supabase...');
@@ -18,9 +20,11 @@ if (!localStorage.getItem('supabase_migration_cleared_v1')) {
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>
     <LanguageProvider>
-      <ToastProvider>
-        <App />
-      </ToastProvider>
+      <PricingProvider>
+        <ToastProvider>
+          <App />
+        </ToastProvider>
+      </PricingProvider>
     </LanguageProvider>
   </React.StrictMode>
 );

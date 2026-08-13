@@ -3,6 +3,7 @@ import { X, Sparkles, ShieldCheck, Check, Loader2, CreditCard, Smartphone } from
 import { UserProfile, MobilePaymentProvider, PaymentTransaction } from '../types/melodia';
 import { d1Database } from '../services/d1Service';
 import { useToast } from './ToastProvider';
+import { usePricing } from '../context/PricingContext';
 
 interface CreditPurchaseModalProps {
   user: UserProfile | null;
@@ -21,14 +22,21 @@ export const CreditPurchaseModal: React.FC<CreditPurchaseModalProps> = ({
   const [phone, setPhone] = useState(user?.phone || '');
   const [isProcessing, setIsProcessing] = useState(false);
   const { showToast } = useToast();
+  const { getPrice } = usePricing();
+
+  const singlePrice = getPrice(1999);
+  const trioPrice = getPrice(2999);
+  const prestigePrice = getPrice(7999);
 
   const plans = [
     {
       id: 'single' as const,
       name: 'Chanson Unique',
       credits: 1,
-      price: 1999,
-      unitPrice: '1 999 F / titre',
+      price: singlePrice.amount,
+      formattedPrice: singlePrice.formatted,
+      currency: singlePrice.currency,
+      unitPrice: `${singlePrice.formatted} / titre`,
       badge: 'Découverte',
       desc: '1 Chanson personnalisée complète',
       popular: false
@@ -37,8 +45,10 @@ export const CreditPurchaseModal: React.FC<CreditPurchaseModalProps> = ({
       id: 'trio' as const,
       name: 'Pack 3 Musiques',
       credits: 3,
-      price: 2999,
-      unitPrice: '~1 000 F / titre',
+      price: trioPrice.amount,
+      formattedPrice: trioPrice.formatted,
+      currency: trioPrice.currency,
+      unitPrice: `~${getPrice(999).formatted} / titre`,
       badge: '⭐ POPULAIRE (-50%)',
       desc: '3 Chansons créées (crédits à vie)',
       popular: true
@@ -47,8 +57,10 @@ export const CreditPurchaseModal: React.FC<CreditPurchaseModalProps> = ({
       id: 'prestige' as const,
       name: 'Pack 8 Musiques',
       credits: 8,
-      price: 7999,
-      unitPrice: '~1 000 F / titre',
+      price: prestigePrice.amount,
+      formattedPrice: prestigePrice.formatted,
+      currency: prestigePrice.currency,
+      unitPrice: `~${getPrice(999).formatted} / titre`,
       badge: '🔥 MEILLEUR PRIX',
       desc: '8 Chansons créées (crédits à vie)',
       popular: false
@@ -72,7 +84,7 @@ export const CreditPurchaseModal: React.FC<CreditPurchaseModalProps> = ({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           amount: currentPlan.price,
-          currency: 'XOF',
+          currency: currentPlan.currency,
           description: `Achat de ${currentPlan.credits} crédits Sonorya - ${user.fullName || user.email}`,
           customer: {
             email: user.email,
@@ -253,7 +265,7 @@ export const CreditPurchaseModal: React.FC<CreditPurchaseModalProps> = ({
                   {p.credits} {p.credits > 1 ? 'Titres' : 'Titre'}
                 </div>
                 <div style={{ fontSize: 18, fontWeight: 900, color: isSelected ? '#2DD4BF' : '#FFFFFF' }}>
-                  {p.price.toLocaleString()} F
+                  {p.formattedPrice}
                 </div>
                 <div style={{ fontSize: 10.5, color: 'var(--gold)', fontWeight: 700, marginTop: 4 }}>
                   {p.unitPrice}
@@ -276,7 +288,7 @@ export const CreditPurchaseModal: React.FC<CreditPurchaseModalProps> = ({
             Total de votre recharge
           </div>
           <div style={{ fontSize: 28, fontWeight: 900, color: '#2DD4BF', letterSpacing: '-0.01em' }}>
-            {currentPlan.price.toLocaleString()} FCFA
+            {currentPlan.formattedPrice}
           </div>
           <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)', marginTop: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
             <span>Acheter {currentPlan.credits} {currentPlan.credits > 1 ? 'crédits de création' : 'crédit de création'}</span>
@@ -349,7 +361,7 @@ export const CreditPurchaseModal: React.FC<CreditPurchaseModalProps> = ({
           {isProcessing ? (
             <>Initialisation Moneroo... <Loader2 size={18} className="animate-spin" /></>
           ) : (
-            <>💳 Payer {currentPlan.price.toLocaleString()} FCFA & Créditer Mon Compte <ShieldCheck size={18} /></>
+            <>💳 Payer {currentPlan.formattedPrice} & Créditer Mon Compte <ShieldCheck size={18} /></>
           )}
         </button>
 
