@@ -33,7 +33,7 @@ export const IzimeloTestimonials: React.FC = () => {
   ];
 
   return (
-    <section className="wrap" id="reviews" style={{ textAlign: 'center', padding: '60px 0 80px' }}>
+    <section className="wrap" id="reviews" style={{ textAlign: 'center', padding: '60px 24px 80px' }}>
       <h2 style={{ fontSize: 36, marginBottom: 8 }}>
         {t('testimonials.title')} <span style={{ color: 'var(--coral)' }}>{t('testimonials.titleHighlight')}</span>
       </h2>

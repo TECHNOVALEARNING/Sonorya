@@ -30,7 +30,7 @@ export const IzimeloHowItWorks: React.FC = () => {
   ];
 
   return (
-    <section className="wrap" id="how" style={{ textAlign: 'center', padding: '80px 0 60px' }}>
+    <section className="wrap" id="how" style={{ textAlign: 'center', padding: '80px 24px 60px' }}>
       <div style={{ width: 12, height: 12, borderRadius: '50%', background: 'var(--coral)', margin: '0 auto 14px' }} />
 
       <h2 style={{ fontSize: 36, marginBottom: 8 }}>

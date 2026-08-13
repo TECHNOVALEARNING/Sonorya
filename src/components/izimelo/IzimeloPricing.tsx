@@ -65,7 +65,7 @@ export const IzimeloPricing: React.FC<IzimeloPricingProps> = ({ onOpenCreate, on
   ];
 
   return (
-    <section className="wrap" id="pricing" style={{ padding: '90px 0 70px', textAlign: 'center' }}>
+    <section className="wrap" id="pricing" style={{ padding: '90px 24px 70px', textAlign: 'center' }}>
       {/* Top Pill Badge */}
       <div style={{
         display: 'inline-flex',

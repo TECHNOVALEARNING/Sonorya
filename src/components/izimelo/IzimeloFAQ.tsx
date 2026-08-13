@@ -10,7 +10,7 @@ export const IzimeloFAQ: React.FC = () => {
   const faqs = lang === 'FR' ? fr.faq.items : en.faq.items;
 
   return (
-    <section className="wrap" id="faq" style={{ textAlign: 'center', padding: '60px 0 100px' }}>
+    <section className="wrap" id="faq" style={{ textAlign: 'center', padding: '60px 24px 100px' }}>
       <div style={{ width: 12, height: 12, borderRadius: '50%', background: 'var(--coral)', margin: '0 auto 14px' }} />
 
       <h2 style={{ fontSize: 36, marginBottom: 8 }}>
