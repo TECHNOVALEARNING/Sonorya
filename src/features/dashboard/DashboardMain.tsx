@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Play, Search, Edit2, LogOut, Save, X, Plus } from 'lucide-react';
+import { Play, Search, Edit2, LogOut, Save, X, Plus, Disc } from 'lucide-react';
 import { Song, UserProfile } from '../../types/melodia';
 import { useToast } from '../../components/ToastProvider';
 import { useTranslation } from '../../i18n/LanguageContext';
@@ -389,7 +389,7 @@ export const DashboardMain: React.FC<MainProps> = ({ user, orders, onPlaySong, o
                   <div>
                     <div style={{ position: 'relative', borderRadius: 14, overflow: 'hidden', marginBottom: 14 }}>
                       <img 
-                        src={songs[0].imageUrl || '/images/cover_rnb_afro.png'} 
+                        src={songs[0].coverUrl || '/images/cover_rnb_afro.png'} 
                         alt={`Album ${genre}`} 
                         style={{ aspectRatio: '1', width: '100%', objectFit: 'cover', display: 'block' }} 
                       />
