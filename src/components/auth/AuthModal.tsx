@@ -84,14 +84,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onSuccess, initia
             {mode === 'signup' && t('auth.signupTitle')}
             {mode === 'forgot' && t('auth.forgotTitle')}
           </h3>
-          <p style={{ color: 'var(--ivory-dim)', fontSize: 13.5, marginBottom: 12 }}>
+          <p style={{ color: 'var(--ivory-dim)', fontSize: 13.5 }}>
             {mode === 'login' && t('auth.loginSubtitle')}
             {mode === 'signup' && t('auth.signupSubtitle')}
             {mode === 'forgot' && t('auth.forgotSubtitle')}
           </p>
-          <div style={{ background: 'rgba(255,255,255,0.05)', padding: '12px', borderRadius: '8px', fontSize: '12.5px', color: '#ccc', lineHeight: '1.4' }}>
-            <strong>Objectif de l'application :</strong> Sonorya est un générateur de chansons personnalisées. Créez un compte pour générer, sauvegarder, payer et télécharger vos musiques de manière sécurisée.
-          </div>
         </div>
 
         {/* Error Banner */}
