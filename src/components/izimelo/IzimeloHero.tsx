@@ -245,7 +245,6 @@ const heroStyles = `
     width: 480px; height: 480px;
     border-radius: 50%;
     background: radial-gradient(circle at 40% 35%, rgba(45, 212, 191, 0.14), rgba(14, 165, 233, 0.07) 55%, transparent 75%);
-    filter: blur(52px);
     animation: breathe 6s ease-in-out infinite;
     pointer-events: none;
   }

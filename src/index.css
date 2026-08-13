@@ -1361,9 +1361,7 @@ footer a:hover {
 .aura-orb {
   position: absolute;
   border-radius: 50%;
-  filter: blur(100px);
   opacity: 0.38;
-  mix-blend-mode: screen;
   will-change: transform, opacity;
 }
 
