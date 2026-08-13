@@ -473,23 +473,6 @@ export const IzimeloHero: React.FC<IzimeloHeroProps> = ({ onOpenCreate }) => {
                 <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
                 <polyline points="15 3 21 3 21 9" />
                 <line x1="10" y1="14" x2="21" y2="3" />
-              </svg>
-            </a>
-          </div>
-          
-          {/* Subtle Disclaimer for Google OAuth Compliance */}
-          <div style={{
-            marginTop: 32,
-            fontSize: 12,
-            color: 'rgba(255,255,255,0.3)',
-            maxWidth: 380,
-            lineHeight: 1.5,
-            opacity: 0,
-            animation: 'riseIn 0.9s var(--ease-apple) forwards',
-            animationDelay: '1.2s'
-          }}>
-            Sonorya est un générateur de chansons personnalisées. La création d'un compte sécurisé (via Google) est requise pour générer, sauvegarder et télécharger vos musiques sur-mesure.
-          </div>
         </div>
 
         {/* RIGHT: ANIMATED LISTENER */}
