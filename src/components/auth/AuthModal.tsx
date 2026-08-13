@@ -60,6 +60,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onSuccess, initia
 
   const handleSocial = async (provider: 'google' | 'apple') => {
     setIsGoogleLoading(true);
+    sessionStorage.setItem('sonorya_oauth_pending', 'true');
     triggerGoogleSignIn(
       () => {
         // Redirection en cours...

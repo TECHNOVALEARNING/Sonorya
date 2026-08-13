@@ -164,12 +164,17 @@ export const App: React.FC = () => {
     sessionStorage.removeItem('sonorya_app_view');
   };
 
-  // Auto-redirect admin user if already logged in as admin
+  // Auto-redirect to dashboard/admin if just logged in via OAuth
   useEffect(() => {
-    if (user?.role === 'admin') {
-      setAppView('admin');
+    if (user) {
+      if (user.role === 'admin') {
+        setAppView('admin');
+      } else if (appView === 'landing' && sessionStorage.getItem('sonorya_oauth_pending') === 'true') {
+        sessionStorage.removeItem('sonorya_oauth_pending');
+        setAppView('dashboard');
+      }
     }
-  }, [user]);
+  }, [user, appView]);
 
   if (appView === 'admin' && user?.role === 'admin') {
     return <AdminDashboard user={user} onLogout={handleLogout} onBackToLanding={() => setAppView('landing')} />;
@@ -337,6 +342,7 @@ export const App: React.FC = () => {
           onSuccess={(loggedInUser) => {
             setShowAuthModal(false);
             setUser(loggedInUser);
+            setAppView(loggedInUser.role === 'admin' ? 'admin' : 'dashboard');
             // Claim all session songs for this logged in user so they stay saved under their account
             setOrders(prev => {
               return prev.map(s => {
