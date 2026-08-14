@@ -22,7 +22,6 @@ export default async function handler(req, res) {
 
     const monerooApiKey = process.env.VITE_MONEROO_API_KEY || process.env.MONEROO_API_KEY || '';
     const supabaseUrl = process.env.VITE_SUPABASE_URL || '';
-    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY || '';
 
     // 1. Vérifier la transaction auprès de Moneroo
     console.log('[CREDIT] Verifying Moneroo transaction:', transactionId);
@@ -69,45 +68,53 @@ export default async function handler(req, res) {
     const authHeader = req.headers.authorization || '';
     const token = authHeader.replace('Bearer ', '').trim();
     
-    let supabase;
-    if (token && !supabaseServiceKey) {
-      // Create client with user's JWT token
-      supabase = createClient(supabaseUrl, process.env.VITE_SUPABASE_ANON_KEY || '', {
-        global: {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        }
-      });
-    } else {
-      // Fallback to service key if available
-      supabase = createClient(supabaseUrl, supabaseServiceKey || process.env.VITE_SUPABASE_ANON_KEY || '');
+    // Check if real service role key exists
+    const realServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const anonKey = process.env.VITE_SUPABASE_ANON_KEY || '';
+    
+    // Use the best available token for authorization
+    const authToken = token || realServiceKey || anonKey;
+
+    // --- Lire les crédits actuels via REST API ---
+    const readResponse = await fetch(`${supabaseUrl}/rest/v1/users?id=eq.${userId}&select=song_credits`, {
+      method: 'GET',
+      headers: {
+        'apikey': anonKey,
+        'Authorization': `Bearer ${authToken}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (!readResponse.ok) {
+      const errorText = await readResponse.text();
+      console.error('[CREDIT] Supabase read error:', errorText);
+      return res.status(500).json({ error: 'Failed to read user credits', details: errorText });
     }
 
-    // Lire les crédits actuels
-    const { data: userData, error: readError } = await supabase
-      .from('users')
-      .select('song_credits')
-      .eq('id', userId)
-      .single();
-
-    if (readError) {
-      console.error('[CREDIT] Supabase read error:', readError);
-      return res.status(500).json({ error: 'Failed to read user credits', details: readError.message });
+    const readData = await readResponse.json();
+    if (!readData || readData.length === 0) {
+      return res.status(404).json({ error: 'User not found in database' });
     }
 
-    const currentCredits = userData?.song_credits || 0;
+    const currentCredits = readData[0].song_credits || 0;
     const newCredits = currentCredits + creditsToAdd;
 
-    // Écrire les nouveaux crédits
-    const { error: updateError } = await supabase
-      .from('users')
-      .update({ song_credits: newCredits })
-      .eq('id', userId);
+    // --- Mettre à jour les crédits via REST API ---
+    const updateResponse = await fetch(`${supabaseUrl}/rest/v1/users?id=eq.${userId}`, {
+      method: 'PATCH',
+      headers: {
+        'apikey': anonKey,
+        'Authorization': `Bearer ${authToken}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=representation'
+      },
+      body: JSON.stringify({ song_credits: newCredits })
+    });
 
-    if (updateError) {
-      console.error('[CREDIT] Supabase update error:', updateError);
-      return res.status(500).json({ error: 'Failed to update credits', details: updateError.message });
+    if (!updateResponse.ok) {
+      const errorText = await updateResponse.text();
+      console.error('[CREDIT] Supabase update error:', errorText);
+      return res.status(500).json({ error: 'Failed to update credits', details: errorText });
     }
 
     console.log('[CREDIT] Success:', { userId, added: creditsToAdd, total: newCredits });
