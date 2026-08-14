@@ -117,9 +117,9 @@ export default defineConfig({
               // kie.ai docs: GET /api/v1/generate/record-info?taskId=xxx
               const taskId = taskIds[0];
 
-              for (let attempt = 0; attempt < 24; attempt++) {
+              for (let attempt = 0; attempt < 60; attempt++) {
                 await new Promise(r => setTimeout(r, 5000)); // 5s between polls
-                console.log(`[KIE.AI] Polling attempt ${attempt + 1}/24 for task ${taskId}...`);
+                console.log(`[KIE.AI] Polling attempt ${attempt + 1}/60 for task ${taskId}...`);
 
                 try {
                   const pollRes = await fetch(

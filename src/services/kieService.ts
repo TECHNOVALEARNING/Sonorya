@@ -54,6 +54,12 @@ export class KieService {
 
       if (response.ok) {
         const data = await response.json();
+        
+        // Check if there's an explicit error from the proxy (like timeout)
+        if (data.error) {
+          throw new Error(data.error);
+        }
+        
         const audioUrl = data.audio_url || data.audioUrl || (data.data && (data.data.audio_url || (Array.isArray(data.data) && data.data[0]?.audio_url)));
         if (audioUrl) {
           return {
@@ -64,17 +70,13 @@ export class KieService {
             durationSeconds: data.duration || 180
           };
         }
+        throw new Error('No audio URL found in response');
+      } else {
+        throw new Error('API proxy returned an error: ' + response.status);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.info('Proxy API call info:', err);
+      throw new Error(err.message || 'Erreur lors de la génération de la musique. Veuillez réessayer.');
     }
-
-    return {
-      audioUrl: '',
-      previewAudioUrl: '',
-      coverUrl: dynamicAiCoverUrl,
-      tempo: params.tempo,
-      durationSeconds: 180,
-    };
   }
 }

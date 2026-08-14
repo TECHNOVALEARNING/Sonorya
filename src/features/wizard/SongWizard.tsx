@@ -257,85 +257,111 @@ export const SongWizard: React.FC<SongWizardProps> = ({
     setGenProgress(10);
     setGenMessage(tBase.generation.msg1);
 
-    setTimeout(async () => {
-      setGenProgress(40);
-      setGenMessage(tBase.generation.msg2);
+    const runGenerationSteps = async () => {
+      try {
+        await new Promise(r => setTimeout(r, 1500));
+        setGenProgress(40);
+        setGenMessage(tBase.generation.msg2);
 
-      const finalOccasion = (occasion === 'Autre' && customOccasion.trim()) ? customOccasion : occasion;
-      const finalGenre = (genre === 'Autre' && customGenre.trim()) ? (customGenre as MusicalStyle) : (genre as MusicalStyle);
+        const finalOccasion = (occasion === 'Autre' && customOccasion.trim()) ? customOccasion : occasion;
+        const finalGenre = (genre === 'Autre' && customGenre.trim()) ? (customGenre as MusicalStyle) : (genre as MusicalStyle);
 
-      let lyrics = '';
-      if (isInstrumental) {
-        lyrics = '[Musique Instrumentale Pur - Sans Voix]';
-      } else if (customLyrics.trim()) {
-        lyrics = customLyrics.trim();
-      } else {
-        lyrics = await OpenAiService.generateLyrics({
-          occasion: finalOccasion,
-          recipientName: recipientName || 'Destinataire',
-          story: story || 'Une célébration spéciale',
-          genre: finalGenre,
-          voiceGender,
-          language,
-          vibe
-        });
-      }
-
-      setTimeout(async () => {
-        setGenProgress(75);
-        setGenMessage(tBase.generation.msg3);
-
-        const musicResult = await KieService.generateMusic({
-          lyrics,
-          genre: finalGenre,
-          voiceGender,
-          tempo,
-          title: recipientName ? recipientName.trim() : finalOccasion
-        });
-
-        setTimeout(() => {
-          setGenProgress(100);
-          setGenMessage(tBase.generation.msg4);
-
-          confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 } });
-
-          const newSong: Song = {
-            id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => { const r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8); return v.toString(16); }),
-            userId: 'user-current',
-            title: recipientName ? recipientName.trim() : finalOccasion,
+        let lyrics = '';
+        if (isInstrumental) {
+          lyrics = '[Musique Instrumentale Pur - Sans Voix]';
+        } else if (customLyrics.trim()) {
+          lyrics = customLyrics.trim();
+        } else {
+          lyrics = await OpenAiService.generateLyrics({
             occasion: finalOccasion,
             recipientName: recipientName || 'Destinataire',
-            story: story || customLyrics,
+            story: story || 'Une célébration spéciale',
             genre: finalGenre,
             voiceGender,
             language,
-            vibe,
-            tempo,
-            durationSeconds: musicResult.durationSeconds,
+            vibe
+          });
+        }
+
+        await new Promise(r => setTimeout(r, 1500));
+        setGenProgress(75);
+        setGenMessage(tBase.generation.msg3);
+
+        const provider = recoveredSongMetadata?.transaction_id ? 'Moneroo' : 'Sonorya Credit';
+        let musicResult;
+        let songStatus: 'completed' | 'failed' = 'completed';
+
+        try {
+          musicResult = await KieService.generateMusic({
             lyrics,
-            audioUrl: musicResult.audioUrl,
-            previewAudioUrl: musicResult.previewAudioUrl,
-            coverUrl: musicResult.coverUrl,
-            status: 'completed',
-            isFavorite: true,
-            downloadCount: 1,
-            playCount: 1,
-            priceFcfa: 2500,
-            paymentProvider: provider,
-            paymentRef: paymentRef,
-            createdAt: new Date().toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })
+            genre: finalGenre,
+            voiceGender,
+            tempo,
+            title: recipientName ? recipientName.trim() : finalOccasion
+          });
+        } catch (err: any) {
+          console.error('KieService failed:', err);
+          songStatus = 'failed';
+          musicResult = {
+            audioUrl: '',
+            previewAudioUrl: '',
+            coverUrl: '',
+            durationSeconds: 0
           };
+        }
 
-          // Update payment with the actual song ID
-          payment.songId = newSong.id;
-          d1Database.savePayment(payment);
+        await new Promise(r => setTimeout(r, 1500));
+        setGenProgress(100);
+        if (songStatus === 'completed') {
+          setGenMessage(tBase.generation.msg4);
+          confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 } });
+        } else {
+          setGenMessage("Génération terminée avec des erreurs (délai dépassé ou erreur API).");
+        }
 
-          setTimeout(() => {
-            onSongCreated(newSong);
-          }, 1200);
-        }, 1500);
-      }, 1500);
-    }, 1500);
+        const newSong: Song = {
+          id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => { const r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8); return v.toString(16); }),
+          userId: 'user-current',
+          title: recipientName ? recipientName.trim() : finalOccasion,
+          occasion: finalOccasion,
+          recipientName: recipientName || 'Destinataire',
+          story: story || customLyrics,
+          genre: finalGenre,
+          voiceGender,
+          language,
+          vibe,
+          tempo,
+          durationSeconds: musicResult.durationSeconds || 180,
+          lyrics,
+          audioUrl: musicResult.audioUrl,
+          previewAudioUrl: musicResult.previewAudioUrl,
+          coverUrl: musicResult.coverUrl,
+          status: songStatus,
+          isFavorite: true,
+          downloadCount: 1,
+          playCount: 1,
+          priceFcfa: 2500,
+          paymentProvider: provider,
+          paymentRef: paymentRef,
+          createdAt: new Date().toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })
+        };
+
+        // Update payment with the actual song ID
+        payment.songId = newSong.id;
+        d1Database.savePayment(payment);
+
+        setTimeout(() => {
+          onSongCreated(newSong);
+        }, 1200);
+
+      } catch (err: any) {
+        console.error('Generation fatal error:', err);
+        alert('Erreur critique: ' + err.message);
+        onClose();
+      }
+    };
+
+    runGenerationSteps();
   };
 
   const wizardInnerContent = (

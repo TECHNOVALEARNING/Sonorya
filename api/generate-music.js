@@ -72,7 +72,7 @@ export default async function handler(req, res) {
     }
 
     const taskId = taskIds[0];
-    for (let attempt = 0; attempt < 20; attempt++) {
+    for (let attempt = 0; attempt < 60; attempt++) {
       await new Promise(r => setTimeout(r, 4000));
       try {
         const pollRes = await fetch(
