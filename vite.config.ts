@@ -76,31 +76,94 @@ export default defineConfig({
               }
 
               // Check if audio URL is already in the generate response
-              const checkAudioUrl = (obj: any): string | null => {
-                if (!obj) return null;
-                if (typeof obj === 'string' && (obj.startsWith('http://') || obj.startsWith('https://')) && (obj.includes('.mp3') || obj.includes('.wav'))) return obj;
-                if (obj.audio_url) return obj.audio_url;
-                if (obj.audioUrl) return obj.audioUrl;
-                if (obj.audioWavUrl) return obj.audioWavUrl;
-                if (obj.audio_download_url) return obj.audio_download_url;
-                if (obj.sunoData && Array.isArray(obj.sunoData) && obj.sunoData[0]?.audioUrl) return obj.sunoData[0].audioUrl;
-                if (obj.response && obj.response.sunoData && Array.isArray(obj.response.sunoData) && obj.response.sunoData[0]?.audioUrl) return obj.response.sunoData[0].audioUrl;
-                if (Array.isArray(obj)) {
-                  for (const item of obj) {
-                    const url = checkAudioUrl(item);
+              const checkAudioUrl = (obj: any, depth = 0): string | null => {
+                if (!obj || depth > 6) return null;
+                
+                // Direct string URL check (relaxed: any http URL is a candidate)
+                if (typeof obj === 'string' && (obj.startsWith('http://') || obj.startsWith('https://'))) {
+                  // Accept any URL that looks like an audio file
+                  if (obj.includes('.mp3') || obj.includes('.wav') || obj.includes('.m4a') || 
+                      obj.includes('.ogg') || obj.includes('.flac') || obj.includes('.aac') ||
+                      obj.includes('/audio') || obj.includes('cdn') || obj.includes('storage')) {
+                    return obj;
+                  }
+                }
+
+                if (typeof obj !== 'object') return null;
+
+                // Check all known audio URL field names  
+                const audioFields = [
+                  'audio_url', 'audioUrl', 'audioWavUrl', 'audio_download_url',
+                  'mp3_url', 'mp3Url', 'song_url', 'songUrl', 'music_url', 'musicUrl',
+                  'stream_url', 'streamUrl', 'download_url', 'downloadUrl',
+                  'media_url', 'mediaUrl', 'file_url', 'fileUrl', 'url',
+                  'audio_mp3_url', 'output_url', 'result_url'
+                ];
+                
+                for (const field of audioFields) {
+                  if (obj[field] && typeof obj[field] === 'string' && 
+                      (obj[field].startsWith('http://') || obj[field].startsWith('https://'))) {
+                    return obj[field];
+                  }
+                }
+
+                // Check sunoData structure
+                if (obj.sunoData && Array.isArray(obj.sunoData) && obj.sunoData.length > 0) {
+                  for (const item of obj.sunoData) {
+                    const url = checkAudioUrl(item, depth + 1);
                     if (url) return url;
                   }
                 }
-                if (obj.data) return checkAudioUrl(obj.data);
-                if (obj.response) return checkAudioUrl(obj.response);
+
+                // Check arrays
+                if (Array.isArray(obj)) {
+                  for (const item of obj) {
+                    const url = checkAudioUrl(item, depth + 1);
+                    if (url) return url;
+                  }
+                }
+
+                // Recurse into known nested objects
+                const nestedFields = ['data', 'response', 'result', 'output', 'record', 'task', 'item', 'items', 'tracks'];
+                for (const field of nestedFields) {
+                  if (obj[field]) {
+                    const url = checkAudioUrl(obj[field], depth + 1);
+                    if (url) return url;
+                  }
+                }
+
+                return null;
+              };
+
+              // Also extract image URL
+              const checkImageUrl = (obj: any, depth = 0): string | null => {
+                if (!obj || depth > 6) return null;
+                if (typeof obj !== 'object') return null;
+                
+                const imageFields = ['image_url', 'imageUrl', 'cover_url', 'coverUrl', 'img_url', 'imgUrl', 'artwork_url', 'image_large_url'];
+                for (const field of imageFields) {
+                  if (obj[field] && typeof obj[field] === 'string' && 
+                      (obj[field].startsWith('http://') || obj[field].startsWith('https://'))) {
+                    return obj[field];
+                  }
+                }
+                if (obj.data) return checkImageUrl(obj.data, depth + 1);
+                if (obj.response) return checkImageUrl(obj.response, depth + 1);
+                if (Array.isArray(obj)) {
+                  for (const item of obj) {
+                    const url = checkImageUrl(item, depth + 1);
+                    if (url) return url;
+                  }
+                }
                 return null;
               };
 
               const immediateUrl = checkAudioUrl(generateData);
               if (immediateUrl) {
+                const imageUrl = checkImageUrl(generateData);
                 console.log('[KIE.AI] Got immediate audio URL:', immediateUrl);
                 res.setHeader('Content-Type', 'application/json');
-                res.end(JSON.stringify({ audio_url: immediateUrl }));
+                res.end(JSON.stringify({ audio_url: immediateUrl, image_url: imageUrl }));
                 return;
               }
 
@@ -135,18 +198,22 @@ export default defineConfig({
 
                   if (pollRes.ok) {
                     const pollData = await pollRes.json();
-                    console.log(`[KIE.AI] Poll response:`, JSON.stringify(pollData).substring(0, 500));
+                    // Log full response for debugging (up to 2000 chars)
+                    console.log(`[KIE.AI] Poll response (full):`, JSON.stringify(pollData).substring(0, 2000));
 
                     const audioUrl = checkAudioUrl(pollData);
                     if (audioUrl) {
+                      const imageUrl = checkImageUrl(pollData);
                       console.log('[KIE.AI] ✅ Got audio URL:', audioUrl);
+                      console.log('[KIE.AI] 🖼️ Got image URL:', imageUrl);
                       res.setHeader('Content-Type', 'application/json');
-                      res.end(JSON.stringify({ audio_url: audioUrl }));
+                      res.end(JSON.stringify({ audio_url: audioUrl, image_url: imageUrl }));
                       return;
                     }
 
                     // Check status field
                     const status = pollData.status || pollData.data?.status || '';
+                    console.log(`[KIE.AI] Task status: "${status}"`);
                     if (typeof status === 'string' && (
                       status.toUpperCase() === 'FAILED' ||
                       status.toUpperCase() === 'ERROR'
@@ -154,6 +221,8 @@ export default defineConfig({
                       console.error('[KIE.AI] Task failed:', pollData);
                       break;
                     }
+                  } else {
+                    console.warn(`[KIE.AI] Poll returned status ${pollRes.status}`);
                   }
                 } catch (pollErr) {
                   console.warn('[KIE.AI] Poll error:', pollErr);
@@ -161,7 +230,7 @@ export default defineConfig({
               }
 
               // If we get here, polling timed out
-              console.warn('[KIE.AI] Polling timed out after 2 minutes');
+              console.warn('[KIE.AI] Polling timed out after 5 minutes');
               res.setHeader('Content-Type', 'application/json');
               res.end(JSON.stringify({ error: 'Generation timed out', taskId }));
 

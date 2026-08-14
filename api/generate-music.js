@@ -44,27 +44,85 @@ export default async function handler(req, res) {
       taskIds = [generateData.taskId || generateData.task_id || generateData.id];
     }
 
-    const checkAudioUrl = (obj) => {
-      if (!obj) return null;
-      if (typeof obj === 'string' && (obj.startsWith('http://') || obj.startsWith('https://')) && (obj.includes('.mp3') || obj.includes('.wav'))) return obj;
-      if (obj.audio_url) return obj.audio_url;
-      if (obj.audioUrl) return obj.audioUrl;
-      if (obj.audioWavUrl) return obj.audioWavUrl;
-      if (obj.audio_download_url) return obj.audio_download_url;
-      if (obj.sunoData && Array.isArray(obj.sunoData) && obj.sunoData[0]?.audioUrl) return obj.sunoData[0].audioUrl;
-      if (Array.isArray(obj)) {
-        for (const item of obj) {
-          const url = checkAudioUrl(item);
+    const checkAudioUrl = (obj, depth = 0) => {
+      if (!obj || depth > 6) return null;
+      
+      if (typeof obj === 'string' && (obj.startsWith('http://') || obj.startsWith('https://'))) {
+        if (obj.includes('.mp3') || obj.includes('.wav') || obj.includes('.m4a') || 
+            obj.includes('.ogg') || obj.includes('.flac') || obj.includes('.aac') ||
+            obj.includes('/audio') || obj.includes('cdn') || obj.includes('storage')) {
+          return obj;
+        }
+      }
+
+      if (typeof obj !== 'object') return null;
+
+      const audioFields = [
+        'audio_url', 'audioUrl', 'audioWavUrl', 'audio_download_url',
+        'mp3_url', 'mp3Url', 'song_url', 'songUrl', 'music_url', 'musicUrl',
+        'stream_url', 'streamUrl', 'download_url', 'downloadUrl',
+        'media_url', 'mediaUrl', 'file_url', 'fileUrl', 'url',
+        'audio_mp3_url', 'output_url', 'result_url'
+      ];
+      
+      for (const field of audioFields) {
+        if (obj[field] && typeof obj[field] === 'string' && 
+            (obj[field].startsWith('http://') || obj[field].startsWith('https://'))) {
+          return obj[field];
+        }
+      }
+
+      if (obj.sunoData && Array.isArray(obj.sunoData) && obj.sunoData.length > 0) {
+        for (const item of obj.sunoData) {
+          const url = checkAudioUrl(item, depth + 1);
           if (url) return url;
         }
       }
-      if (obj.data) return checkAudioUrl(obj.data);
+
+      if (Array.isArray(obj)) {
+        for (const item of obj) {
+          const url = checkAudioUrl(item, depth + 1);
+          if (url) return url;
+        }
+      }
+
+      const nestedFields = ['data', 'response', 'result', 'output', 'record', 'task', 'item', 'items', 'tracks'];
+      for (const field of nestedFields) {
+        if (obj[field]) {
+          const url = checkAudioUrl(obj[field], depth + 1);
+          if (url) return url;
+        }
+      }
+
+      return null;
+    };
+
+    const checkImageUrl = (obj, depth = 0) => {
+      if (!obj || depth > 6) return null;
+      if (typeof obj !== 'object') return null;
+      
+      const imageFields = ['image_url', 'imageUrl', 'cover_url', 'coverUrl', 'img_url', 'imgUrl', 'artwork_url', 'image_large_url'];
+      for (const field of imageFields) {
+        if (obj[field] && typeof obj[field] === 'string' && 
+            (obj[field].startsWith('http://') || obj[field].startsWith('https://'))) {
+          return obj[field];
+        }
+      }
+      if (obj.data) return checkImageUrl(obj.data, depth + 1);
+      if (obj.response) return checkImageUrl(obj.response, depth + 1);
+      if (Array.isArray(obj)) {
+        for (const item of obj) {
+          const url = checkImageUrl(item, depth + 1);
+          if (url) return url;
+        }
+      }
       return null;
     };
 
     const immediateUrl = checkAudioUrl(generateData);
     if (immediateUrl) {
-      return res.status(200).json({ audio_url: immediateUrl });
+      const imageUrl = checkImageUrl(generateData);
+      return res.status(200).json({ audio_url: immediateUrl, image_url: imageUrl });
     }
 
     if (taskIds.length === 0) {
@@ -86,9 +144,15 @@ export default async function handler(req, res) {
         );
         if (pollRes.ok) {
           const pollData = await pollRes.json();
+          console.log('[KIE.AI VERCEL] Poll response:', JSON.stringify(pollData).substring(0, 2000));
           const audioUrl = checkAudioUrl(pollData);
           if (audioUrl) {
-            return res.status(200).json({ audio_url: audioUrl });
+            const imageUrl = checkImageUrl(pollData);
+            return res.status(200).json({ audio_url: audioUrl, image_url: imageUrl });
+          }
+          const status = pollData.status || pollData.data?.status || '';
+          if (typeof status === 'string' && (status.toUpperCase() === 'FAILED' || status.toUpperCase() === 'ERROR')) {
+            break;
           }
         }
       } catch (pollErr) {

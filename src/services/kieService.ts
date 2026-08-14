@@ -62,10 +62,11 @@ export class KieService {
         
         const audioUrl = data.audio_url || data.audioUrl || (data.data && (data.data.audio_url || (Array.isArray(data.data) && data.data[0]?.audio_url)));
         if (audioUrl) {
+          const imageUrl = data.image_url || data.imageUrl || (data.data && (data.data.image_url || (Array.isArray(data.data) && data.data[0]?.image_url)));
           return {
             audioUrl,
             previewAudioUrl: data.preview_url || audioUrl,
-            coverUrl: data.image_url || data.imageUrl || dynamicAiCoverUrl,
+            coverUrl: imageUrl || data.image_url || data.imageUrl || dynamicAiCoverUrl,
             tempo: params.tempo,
             durationSeconds: data.duration || 180
           };
