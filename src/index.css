@@ -1636,3 +1636,80 @@ footer a:hover {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
 }
+
+/* =========================================================
+   DASHBOARD MOBILE FIXES
+   ========================================================= */
+.dashboard-main-wrapper {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 360px;
+  height: 100vh;
+  overflow: hidden;
+}
+
+@media (max-width: 768px) {
+  .dashboard-sidebar {
+    display: none !important;
+  }
+  
+  .dashboard-main-wrapper {
+    display: flex !important;
+    flex-direction: column !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+  
+  .dashboard-main {
+    padding: 16px 16px 80px !important;
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+  
+  .dashboard-right-panel {
+    display: none !important; /* Hide lyrics panel on mobile or adjust as needed */
+  }
+  
+  .client-dashboard-layout {
+    overflow-y: auto !important;
+    height: auto !important;
+    max-height: none !important;
+    padding-bottom: 70px;
+  }
+
+  .mobile-bottom-nav {
+    display: flex !important;
+  }
+}
+
+.mobile-bottom-nav {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--bg-1);
+  border-top: 1px solid rgba(255,255,255,0.05);
+  padding: 10px 16px;
+  justify-content: space-around;
+  align-items: center;
+  z-index: 100;
+  padding-bottom: env(safe-area-inset-bottom, 10px);
+}
+
+.mobile-bottom-nav button {
+  background: none;
+  border: none;
+  color: #94A3B8;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.mobile-bottom-nav button.active {
+  color: var(--teal);
+}

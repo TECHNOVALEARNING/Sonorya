@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { UserProfile, Song } from '../../types/melodia';
+import { Home, Compass, PlusCircle, Library, User } from 'lucide-react';
 import { DashboardSidebar } from './DashboardSidebar';
 import { DashboardMain } from './DashboardMain';
 import { DashboardPlayer } from './DashboardPlayer';
@@ -105,7 +106,7 @@ export const ClientDashboard: React.FC<ClientDashboardProps> = ({
       />
       
       {currentView === 'create' ? (
-        <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '1fr 360px', height: '100vh', overflow: 'hidden' }}>
+        <div className="dashboard-main-wrapper">
           <main className="dashboard-main" style={{ padding: '24px 32px 100px', overflowY: 'auto' }}>
             <SongWizard
               isEmbedded={true}
@@ -131,7 +132,7 @@ export const ClientDashboard: React.FC<ClientDashboardProps> = ({
           />
         </div>
       ) : (
-        <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '1fr 360px', height: '100vh', overflow: 'hidden' }}>
+        <div className="dashboard-main-wrapper">
           <DashboardMain 
             user={user}
             orders={userCreatedOrders} 
@@ -162,6 +163,30 @@ export const ClientDashboard: React.FC<ClientDashboardProps> = ({
           setAudioDuration(dur);
         }}
       />
+
+      {/* MOBILE BOTTOM NAVIGATION */}
+      <div className="mobile-bottom-nav">
+        <button className={currentView === 'home' ? 'active' : ''} onClick={() => setCurrentView('home')}>
+          <Home size={20} />
+          <span>Accueil</span>
+        </button>
+        <button className={currentView === 'explore' ? 'active' : ''} onClick={() => setCurrentView('explore')}>
+          <Compass size={20} />
+          <span>Explorer</span>
+        </button>
+        <button className={currentView === 'create' ? 'active' : ''} onClick={() => { setCurrentView('create'); onOpenCreate(); }}>
+          <PlusCircle size={24} style={{ color: currentView === 'create' ? 'var(--gold)' : 'var(--ivory)' }} />
+          <span style={{ color: currentView === 'create' ? 'var(--gold)' : 'inherit' }}>Créer</span>
+        </button>
+        <button className={currentView === 'recent' ? 'active' : ''} onClick={() => setCurrentView('recent')}>
+          <Library size={20} />
+          <span>Chansons</span>
+        </button>
+        <button className={currentView === 'profile' ? 'active' : ''} onClick={() => setCurrentView('profile')}>
+          <User size={20} />
+          <span>Profil</span>
+        </button>
+      </div>
     </div>
   );
 };
