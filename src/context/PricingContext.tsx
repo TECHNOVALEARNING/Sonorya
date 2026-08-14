@@ -71,8 +71,8 @@ export const PricingProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   const getPrice = (baseXof: number): PriceDetails => {
-    // MODE TEST - PRIX FORCÉ À 2 FCFA (À retirer en production)
-    return { amount: 2, formatted: `2 FCFA`, currency: 'XOF' };
+    // MODE TEST - PRIX FORCÉ À 1 FCFA (À retirer en production)
+    return { amount: 1, formatted: `1 FCFA`, currency: 'XOF' };
   };
 
   return (
