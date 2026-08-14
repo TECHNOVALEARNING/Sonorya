@@ -62,7 +62,8 @@ export default async function handler(req, res) {
         'mp3_url', 'mp3Url', 'song_url', 'songUrl', 'music_url', 'musicUrl',
         'stream_url', 'streamUrl', 'download_url', 'downloadUrl',
         'media_url', 'mediaUrl', 'file_url', 'fileUrl', 'url',
-        'audio_mp3_url', 'output_url', 'result_url'
+        'audio_mp3_url', 'output_url', 'result_url',
+        'streamAudioUrl', 'sourceStreamAudioUrl', 'sourceAudioUrl'
       ];
       
       for (const field of audioFields) {
