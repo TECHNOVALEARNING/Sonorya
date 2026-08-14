@@ -42,6 +42,44 @@ export const App: React.FC = () => {
     return () => unsubscribe();
   }, []);
 
+  // Intercepter les retours de paiement (Achat de Crédits purs)
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const paymentStatus = urlParams.get('payment_status');
+    
+    if (paymentStatus === 'verify' && user) {
+      const pendingStr = localStorage.getItem('sonorya_pending_purchase');
+      if (pendingStr) {
+        try {
+          const pending = JSON.parse(pendingStr);
+          if (pending.userId === user.id) {
+            const newCredits = (user.songCredits || 0) + pending.credits;
+            const updatedUser = { ...user, songCredits: newCredits };
+            d1Database.saveUser(updatedUser);
+            setUser(updatedUser);
+            localStorage.removeItem('sonorya_pending_purchase');
+            // Nettoyer l'URL
+            window.history.replaceState({}, document.title, window.location.pathname);
+            
+            // Notifier l'utilisateur
+            setTimeout(() => {
+              alert(`🎉 Paiement réussi ! ${pending.credits} crédits ont été ajoutés à votre compte.`);
+            }, 500);
+          }
+        } catch (e) {
+          console.error('[PAYMENT VERIFY ERROR]', e);
+        }
+      }
+    } else if (paymentStatus === 'verify_song') {
+      // Force l'ouverture du dashboard et du SongWizard pour que son propre useEffect s'exécute
+      if (user) {
+        setTimeout(() => {
+          setDashboardView('create');
+        }, 300);
+      }
+    }
+  }, [user]);
+
   const { showToast } = useToast();
   const { lang, setLang } = useTranslation();
   const [landingView, setLandingView] = useState<LandingView>('home');

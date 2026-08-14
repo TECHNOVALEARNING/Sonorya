@@ -78,10 +78,16 @@ export const CreditPurchaseModal: React.FC<CreditPurchaseModalProps> = ({
 
     setIsProcessing(true);
 
-    // Pré-ouvrir la fenêtre pour éviter le blocage des pop-ups par le navigateur
-    const popup = window.open('about:blank', '_blank');
-
     try {
+      // 1. Sauvegarde locale de l'intention d'achat avant de quitter le site
+      localStorage.setItem('sonorya_pending_purchase', JSON.stringify({
+        plan: currentPlan.id,
+        credits: currentPlan.credits,
+        userId: user.id
+      }));
+
+      const returnUrl = `${window.location.origin}/?payment_status=verify`;
+
       const response = await fetch('/api/moneroo/initialize', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -95,53 +101,21 @@ export const CreditPurchaseModal: React.FC<CreditPurchaseModalProps> = ({
             last_name: 'Sonorya',
             phone: phone || user.phone || ''
           },
-          return_url: window.location.href
+          return_url: returnUrl
         })
       });
 
       const data = await response.json();
       const checkoutUrl = data.data?.checkout_url || data.checkout_url;
 
-      if (checkoutUrl && popup) {
-        popup.location.href = checkoutUrl;
-      } else if (popup) {
-        popup.close();
+      if (checkoutUrl) {
+        // Redirection totale vers Moneroo
+        window.location.href = checkoutUrl;
       }
-
-      // Save payment
-      const paymentId = 'pay-' + Date.now();
-      const paymentRef = 'MNR-' + Date.now();
-      const payment: PaymentTransaction = {
-        id: paymentId,
-        userId: user.id,
-        songId: '',
-        reference: paymentRef,
-        provider: 'Moneroo' as MobilePaymentProvider,
-        amountFcfa: currentPlan.price,
-        phoneNumber: phone || user.phone || '',
-        status: 'successful',
-        createdAt: new Date().toISOString()
-      };
-      d1Database.savePayment(payment);
-
-      // Credit user profile
-      const newCredits = (user.songCredits || 0) + currentPlan.credits;
-      const updatedUser: UserProfile = { ...user, songCredits: newCredits };
-      await d1Database.saveUser(updatedUser);
-
-      showToast(`🎉 ${currentPlan.credits} crédits de création ajoutés à votre compte !`, 'success');
-      onSuccess(updatedUser, currentPlan.credits);
-      onClose();
     } catch (e) {
       console.error('[CREDIT PURCHASE] Error:', e);
-      const newCredits = (user.songCredits || 0) + currentPlan.credits;
-      const updatedUser: UserProfile = { ...user, songCredits: newCredits };
-      await d1Database.saveUser(updatedUser);
-      showToast(`🎉 ${currentPlan.credits} crédits de création ajoutés à votre compte !`, 'success');
-      onSuccess(updatedUser, currentPlan.credits);
-      onClose();
-    } finally {
       setIsProcessing(false);
+      showToast("Erreur lors de l'initialisation du paiement.", "error");
     }
   };
 

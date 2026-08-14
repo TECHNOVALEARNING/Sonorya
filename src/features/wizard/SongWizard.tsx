@@ -58,6 +58,70 @@ export const SongWizard: React.FC<SongWizardProps> = ({
   const [genMessage, setGenMessage] = useState('');
   
   const { t, lang } = useTranslation();
+
+  // Intercepter le retour de paiement pour une chanson
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const paymentStatus = urlParams.get('payment_status');
+    
+    if (paymentStatus === 'verify_song') {
+      const pendingStr = localStorage.getItem('sonorya_pending_song');
+      if (pendingStr) {
+        try {
+          const pending = JSON.parse(pendingStr);
+          // Si l'utilisateur correspond ou s'il n'est pas connecté mais que le cookie l'autorise (cas rare)
+          if (!user || pending.userId === user.id) {
+            
+            // Créditer l'utilisateur s'il a pris un pack
+            if (pending.extraCredits > 0 && user) {
+              const newCredits = (user.songCredits || 0) + pending.extraCredits;
+              const updatedUser = { ...user, songCredits: newCredits };
+              d1Database.saveUser(updatedUser);
+              onUpdateUser?.(updatedUser);
+            }
+
+            // Restaurer les valeurs dans le wizard pour générer la chanson
+            setOccasion(pending.occasion as Occasion);
+            setGenre(pending.genre as MusicalStyle);
+            setVibe(pending.vibe as SongVibe);
+            setVoiceGender(pending.voiceGender as VoiceGender);
+            setLanguage(pending.language as SongLanguage);
+            setRecipientName(pending.recipientName);
+            setStory(pending.story);
+            setCustomLyrics(pending.customLyrics);
+            setIsInstrumental(pending.isInstrumental);
+            setTempo(pending.tempo);
+
+            const paymentId = 'pay-' + Date.now();
+            const paymentRef = 'MNR-VERIFIED-' + Date.now();
+            const payment: PaymentTransaction = {
+              id: paymentId,
+              userId: user?.id || 'user-current',
+              songId: '',
+              reference: paymentRef,
+              provider: 'Moneroo' as MobilePaymentProvider,
+              amountFcfa: pending.amount || 0,
+              phoneNumber: user?.phone || '',
+              status: 'successful',
+              createdAt: new Date().toISOString()
+            };
+            d1Database.savePayment(payment);
+
+            localStorage.removeItem('sonorya_pending_song');
+            window.history.replaceState({}, document.title, window.location.pathname);
+
+            // Passer directement à l'étape finale et lancer la génération !
+            setStep(3);
+            setTimeout(() => {
+              startGeneration(payment, paymentRef);
+            }, 500);
+          }
+        } catch (e) {
+          console.error('[SONG VERIFY ERROR]', e);
+        }
+      }
+    }
+  }, [user]);
   const tBase = lang === 'FR' ? fr.wizard : en.wizard;
   const { getPrice } = usePricing();
   const catsBase = lang === 'FR' ? fr.categories : en.categories;
@@ -137,10 +201,27 @@ export const SongWizard: React.FC<SongWizardProps> = ({
     setIsProcessingPayment(true);
     const { amount, currency, extraCredits, label } = getPlanDetails(selectedPlan);
 
-    // Pré-ouvrir la fenêtre pour garantir l'affichage sans blocage du navigateur
-    const popup = window.open('about:blank', '_blank');
-
     try {
+      // 1. Sauvegarde locale de la chanson en attente avant de quitter le site
+      const pendingSongParams = {
+        occasion: customOccasion || occasion,
+        genre: customGenre || genre,
+        vibe,
+        voiceGender,
+        language,
+        recipientName,
+        story,
+        customLyrics,
+        isInstrumental,
+        tempo,
+        amount,
+        extraCredits,
+        userId: user?.id || 'user-current'
+      };
+      localStorage.setItem('sonorya_pending_song', JSON.stringify(pendingSongParams));
+
+      const returnUrl = `${window.location.origin}/?payment_status=verify_song`;
+
       const response = await fetch('/api/moneroo/initialize', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -154,75 +235,23 @@ export const SongWizard: React.FC<SongWizardProps> = ({
             last_name: 'Sonorya',
             phone: phone || user?.phone || ''
           },
-          return_url: window.location.href
+          return_url: returnUrl
         })
       });
 
       const data = await response.json();
       console.log('[MONEROO] Payment init result:', data);
 
-      const monerooId = data.data?.id || data.id || 'moneroo-' + Date.now();
       const checkoutUrl = data.data?.checkout_url || data.checkout_url;
 
-      if (checkoutUrl && popup) {
-        popup.location.href = checkoutUrl;
-      } else if (popup) {
-        popup.close();
+      if (checkoutUrl) {
+        // Redirection totale vers Moneroo
+        window.location.href = checkoutUrl;
       }
-
-      // Add extra credits to user profile if purchasing a multi-song pack
-      if (extraCredits > 0 && user) {
-        const newCredits = (user.songCredits || 0) + extraCredits;
-        const updatedUser = { ...user, songCredits: newCredits };
-        d1Database.saveUser(updatedUser);
-        onUpdateUser?.(updatedUser);
-      }
-
-      // Save payment to D1 database
-      const paymentId = 'pay-' + Date.now() + '-' + Math.floor(Math.random() * 10000);
-      const paymentRef = 'MONEROO-' + monerooId;
-      const payment: PaymentTransaction = {
-        id: paymentId,
-        userId: user?.id || 'user-current',
-        songId: '',
-        reference: paymentRef,
-        provider: 'Moneroo' as MobilePaymentProvider,
-        amountFcfa: amount,
-        phoneNumber: phone || user?.phone || '',
-        status: 'successful',
-        createdAt: new Date().toISOString()
-      };
-      d1Database.savePayment(payment);
-
-      // Start music generation
-      startGeneration(payment, paymentRef);
     } catch (err) {
-      console.error('[MONEROO] Payment error:', err);
-
-      if (extraCredits > 0 && user) {
-        const newCredits = (user.songCredits || 0) + extraCredits;
-        const updatedUser = { ...user, songCredits: newCredits };
-        d1Database.saveUser(updatedUser);
-        onUpdateUser?.(updatedUser);
-      }
-
-      const paymentId = 'pay-' + Date.now();
-      const paymentRef = 'MONEROO-FB-' + Date.now();
-      const payment: PaymentTransaction = {
-        id: paymentId,
-        userId: user?.id || 'user-current',
-        songId: '',
-        reference: paymentRef,
-        provider: 'Moneroo' as MobilePaymentProvider,
-        amountFcfa: amount,
-        phoneNumber: phone || user?.phone || '',
-        status: 'successful',
-        createdAt: new Date().toISOString()
-      };
-      d1Database.savePayment(payment);
-      startGeneration(payment, paymentRef);
-    } finally {
+      console.error('[MONEROO ERROR]', err);
       setIsProcessingPayment(false);
+      alert(tBase.error || 'Erreur lors du paiement.');
     }
   };
 

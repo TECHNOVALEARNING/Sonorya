@@ -26,7 +26,7 @@ export default async function handler(req, res) {
           last_name: parsed.customer?.last_name || 'Sonorya',
           phone: parsed.customer?.phone || ''
         },
-        return_url: parsed.return_url || 'https://sonorya.technova.app/dashboard',
+        return_url: parsed.return_url || 'https://sonorya.co/dashboard',
         metadata: parsed.metadata || {}
       })
     });
