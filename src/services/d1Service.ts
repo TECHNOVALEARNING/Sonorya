@@ -139,7 +139,8 @@ class SupabaseDatabaseService {
         role: row.role as 'admin'|'user',
         status: row.status,
         referralCode: row.referral_code,
-        bonusCredits: row.bonus_credits,
+        bonusCredits: row.bonus_credits || 0,
+        songCredits: row.song_credits || 0,
         createdAt: row.created_at,
         totalSongs: 0 // Would need a join to calculate properly
       }));
@@ -151,7 +152,7 @@ class SupabaseDatabaseService {
 
   public async saveUser(user: UserProfile): Promise<UserProfile> {
     try {
-      const dbUser = {
+      const dbUser: Record<string, any> = {
         id: user.id,
         email: user.email,
         full_name: user.fullName,
@@ -161,7 +162,8 @@ class SupabaseDatabaseService {
         role: user.role,
         status: user.status,
         referral_code: user.referralCode,
-        bonus_credits: user.bonusCredits,
+        bonus_credits: user.bonusCredits || 0,
+        song_credits: user.songCredits || 0,
       };
       
       const { data, error } = await supabase
@@ -170,7 +172,11 @@ class SupabaseDatabaseService {
         .select()
         .single();
         
-      if (error) throw error;
+      if (error) {
+        console.error('[SAVE USER] Supabase error:', error.message, error.details);
+        throw error;
+      }
+      console.log('[SAVE USER] Credits saved successfully:', user.songCredits);
       return user;
     } catch (e) {
       console.error('Error saving user to Supabase:', e);

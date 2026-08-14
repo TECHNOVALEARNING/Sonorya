@@ -60,65 +60,109 @@ export const SongWizard: React.FC<SongWizardProps> = ({
   const { t, lang } = useTranslation();
 
   // Intercepter le retour de paiement pour une chanson
+  const paymentProcessedRef = React.useRef(false);
+  
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const paymentStatus = urlParams.get('payment_status');
     
-    if (paymentStatus === 'verify_song') {
-      const pendingStr = localStorage.getItem('sonorya_pending_song');
-      if (pendingStr) {
-        try {
-          const pending = JSON.parse(pendingStr);
-          // Si l'utilisateur correspond ou s'il n'est pas connecté mais que le cookie l'autorise (cas rare)
-          if (!user || pending.userId === user.id) {
+    // Attendre que l'utilisateur soit chargé et ne traiter qu'une seule fois
+    if (paymentStatus !== 'verify_song' || !user || paymentProcessedRef.current) return;
+    
+    const pendingStr = localStorage.getItem('sonorya_pending_song');
+    if (!pendingStr) return;
+    
+    paymentProcessedRef.current = true;
+    
+    const processSongPayment = async () => {
+      try {
+        const pending = JSON.parse(pendingStr);
+        
+        // Vérifier le paiement auprès de Moneroo avant de créditer
+        if (pending.monerooTransactionId) {
+          console.log('[VERIFY SONG] Verifying Moneroo transaction:', pending.monerooTransactionId);
+          
+          try {
+            const verifyResponse = await fetch('/api/moneroo/verify', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ transactionId: pending.monerooTransactionId })
+            });
+            const verifyData = await verifyResponse.json();
+            const txStatus = verifyData.data?.status || verifyData.status;
             
-            // Créditer l'utilisateur s'il a pris un pack
-            if (pending.extraCredits > 0 && user) {
-              const newCredits = (user.songCredits || 0) + pending.extraCredits;
-              const updatedUser = { ...user, songCredits: newCredits };
-              d1Database.saveUser(updatedUser);
-              onUpdateUser?.(updatedUser);
+            console.log('[VERIFY SONG] Moneroo status:', txStatus, verifyData);
+            
+            if (txStatus !== 'success' && txStatus !== 'successful') {
+              console.warn('[VERIFY SONG] Payment not confirmed by Moneroo:', txStatus);
+              // Ne pas supprimer les données en attente - l'utilisateur pourra réessayer
+              paymentProcessedRef.current = false;
+              alert('Le paiement n\'a pas été confirmé par Moneroo. Statut: ' + (txStatus || 'inconnu'));
+              window.history.replaceState({}, document.title, window.location.pathname);
+              return;
             }
-
-            // Restaurer les valeurs dans le wizard pour générer la chanson
-            setOccasion(pending.occasion as Occasion);
-            setGenre(pending.genre as MusicalStyle);
-            setVibe(pending.vibe as SongVibe);
-            setVoiceGender(pending.voiceGender as VoiceGender);
-            setLanguage(pending.language as SongLanguage);
-            setRecipientName(pending.recipientName);
-            setStory(pending.story);
-            setCustomLyrics(pending.customLyrics);
-            setIsInstrumental(pending.isInstrumental);
-            setTempo(pending.tempo);
-
-            const paymentId = 'pay-' + Date.now();
-            const paymentRef = 'MNR-VERIFIED-' + Date.now();
-            const payment: PaymentTransaction = {
-              id: paymentId,
-              userId: user?.id || 'user-current',
-              songId: '',
-              reference: paymentRef,
-              provider: 'Moneroo' as MobilePaymentProvider,
-              amountFcfa: pending.amount || 0,
-              phoneNumber: user?.phone || '',
-              status: 'successful',
-              createdAt: new Date().toISOString()
-            };
-            d1Database.savePayment(payment);
-
-            localStorage.removeItem('sonorya_pending_song');
-            window.history.replaceState({}, document.title, window.location.pathname);
-
-            // Passer directement à l'animation de génération IA !
-            setStep(7);
-            startGeneration(payment, paymentRef);
+          } catch (verifyError) {
+            console.error('[VERIFY SONG] Moneroo verification error:', verifyError);
+            // En cas d'erreur réseau de vérification, on continue quand même (mode dégradé)
+            console.warn('[VERIFY SONG] Proceeding without Moneroo verification (network error)');
           }
-        } catch (e) {
-          console.error('[SONG VERIFY ERROR]', e);
         }
+        
+        // Si l'utilisateur ne correspond pas, ignorer
+        if (pending.userId && pending.userId !== user.id && pending.userId !== 'user-current') {
+          console.warn('[VERIFY SONG] User ID mismatch:', pending.userId, user.id);
+          return;
+        }
+        
+        // Créditer l'utilisateur s'il a pris un pack avec des crédits supplémentaires
+        if (pending.extraCredits > 0) {
+          const newCredits = (user.songCredits || 0) + pending.extraCredits;
+          const updatedUser = { ...user, songCredits: newCredits };
+          await d1Database.saveUser(updatedUser);
+          onUpdateUser?.(updatedUser);
+          console.log('[VERIFY SONG] Credits added:', pending.extraCredits, '-> Total:', newCredits);
+        }
+
+        // Restaurer les valeurs dans le wizard pour générer la chanson
+        setOccasion(pending.occasion as Occasion);
+        setGenre(pending.genre as MusicalStyle);
+        setVibe(pending.vibe as SongVibe);
+        setVoiceGender(pending.voiceGender as VoiceGender);
+        setLanguage(pending.language as SongLanguage);
+        setRecipientName(pending.recipientName);
+        setStory(pending.story);
+        setCustomLyrics(pending.customLyrics);
+        setIsInstrumental(pending.isInstrumental);
+        setTempo(pending.tempo);
+
+        const paymentId = 'pay-' + Date.now();
+        const paymentRef = 'MNR-' + (pending.monerooTransactionId || Date.now());
+        const payment: PaymentTransaction = {
+          id: paymentId,
+          userId: user.id,
+          songId: '',
+          reference: paymentRef,
+          provider: 'Moneroo' as MobilePaymentProvider,
+          amountFcfa: pending.amount || 0,
+          phoneNumber: user.phone || '',
+          status: 'successful',
+          createdAt: new Date().toISOString()
+        };
+        await d1Database.savePayment(payment);
+
+        localStorage.removeItem('sonorya_pending_song');
+        window.history.replaceState({}, document.title, window.location.pathname);
+
+        // Passer directement à l'animation de génération IA !
+        setStep(7);
+        startGeneration(payment, paymentRef);
+      } catch (e) {
+        console.error('[SONG VERIFY ERROR]', e);
+        paymentProcessedRef.current = false;
       }
-    }
+    };
+    
+    processSongPayment();
   }, [user]);
   const tBase = lang === 'FR' ? fr.wizard : en.wizard;
   const { getPrice } = usePricing();
@@ -216,7 +260,6 @@ export const SongWizard: React.FC<SongWizardProps> = ({
         extraCredits,
         userId: user?.id || 'user-current'
       };
-      localStorage.setItem('sonorya_pending_song', JSON.stringify(pendingSongParams));
 
       const returnUrl = `${window.location.origin}/?payment_status=verify_song`;
 
@@ -241,10 +284,21 @@ export const SongWizard: React.FC<SongWizardProps> = ({
       console.log('[MONEROO] Payment init result:', data);
 
       const checkoutUrl = data.data?.checkout_url || data.checkout_url;
+      const transactionId = data.data?.id || null;
 
       if (checkoutUrl) {
+        // Sauvegarder le transactionId Moneroo pour vérification au retour
+        localStorage.setItem('sonorya_pending_song', JSON.stringify({
+          ...pendingSongParams,
+          monerooTransactionId: transactionId
+        }));
+        
         // Redirection totale vers Moneroo
         window.location.href = checkoutUrl;
+      } else {
+        console.error('[MONEROO] No checkout URL received:', data);
+        setIsProcessingPayment(false);
+        alert(data.message || 'Erreur Moneroo : aucune URL de paiement reçue.');
       }
     } catch (err) {
       console.error('[MONEROO ERROR]', err);

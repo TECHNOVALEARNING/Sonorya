@@ -79,13 +79,6 @@ export const CreditPurchaseModal: React.FC<CreditPurchaseModalProps> = ({
     setIsProcessing(true);
 
     try {
-      // 1. Sauvegarde locale de l'intention d'achat avant de quitter le site
-      localStorage.setItem('sonorya_pending_purchase', JSON.stringify({
-        plan: currentPlan.id,
-        credits: currentPlan.credits,
-        userId: user.id
-      }));
-
       const returnUrl = `${window.location.origin}/?payment_status=verify`;
 
       const response = await fetch('/api/moneroo/initialize', {
@@ -107,10 +100,23 @@ export const CreditPurchaseModal: React.FC<CreditPurchaseModalProps> = ({
 
       const data = await response.json();
       const checkoutUrl = data.data?.checkout_url || data.checkout_url;
+      const transactionId = data.data?.id || null;
 
       if (checkoutUrl) {
+        // Sauvegarder l'intention d'achat avec le transactionId AVANT de quitter le site
+        localStorage.setItem('sonorya_pending_purchase', JSON.stringify({
+          plan: currentPlan.id,
+          credits: currentPlan.credits,
+          userId: user.id,
+          monerooTransactionId: transactionId
+        }));
+        
         // Redirection totale vers Moneroo
         window.location.href = checkoutUrl;
+      } else {
+        console.error('[CREDIT PURCHASE] No checkout URL:', data);
+        setIsProcessing(false);
+        showToast(data.message || "Erreur Moneroo : aucune URL de paiement reçue.", "error");
       }
     } catch (e) {
       console.error('[CREDIT PURCHASE] Error:', e);

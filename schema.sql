@@ -16,6 +16,7 @@ CREATE TABLE IF NOT EXISTS public.users (
     status TEXT CHECK(status IN ('active', 'banned', 'suspended')) DEFAULT 'active',
     referral_code TEXT UNIQUE,
     bonus_credits INTEGER DEFAULT 0,
+    song_credits INTEGER DEFAULT 0,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 

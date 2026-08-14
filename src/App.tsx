@@ -43,40 +43,85 @@ export const App: React.FC = () => {
   }, []);
 
   // Intercepter les retours de paiement (Achat de Crédits purs et Chansons)
+  const creditPaymentProcessedRef = React.useRef(false);
+  
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const paymentStatus = urlParams.get('payment_status');
     
-    if (paymentStatus) {
-      setAppView('dashboard');
-    }
+    if (!paymentStatus) return;
     
-    if (paymentStatus === 'verify') {
+    // Toujours basculer vers le dashboard au retour de Moneroo
+    setAppView('dashboard');
+    
+    // Traitement des achats de crédits purs
+    if (paymentStatus === 'verify' && !creditPaymentProcessedRef.current) {
+      // Attendre que l'utilisateur soit chargé
+      const currentUser = user || authRepository.getCurrentUser();
+      if (!currentUser) return;
+      
       const pendingStr = localStorage.getItem('sonorya_pending_purchase');
-      if (pendingStr) {
+      if (!pendingStr) return;
+      
+      creditPaymentProcessedRef.current = true;
+      
+      const processCredits = async () => {
         try {
           const pending = JSON.parse(pendingStr);
-          const currentUser = user || authRepository.getCurrentUser();
-          if (currentUser) {
-            const newCredits = (currentUser.songCredits || 0) + pending.credits;
-            const updatedUser = { ...currentUser, songCredits: newCredits };
-            d1Database.saveUser(updatedUser);
-            authRepository.updateProfile(updatedUser);
-            setUser(updatedUser);
-            localStorage.removeItem('sonorya_pending_purchase');
-            window.history.replaceState({}, document.title, window.location.pathname);
+          
+          // Vérifier le paiement auprès de Moneroo avant de créditer
+          if (pending.monerooTransactionId) {
+            console.log('[VERIFY CREDITS] Verifying Moneroo transaction:', pending.monerooTransactionId);
             
-            setTimeout(() => {
-              showToast(`🎉 Paiement réussi ! ${pending.credits} crédits ont été ajoutés à votre compte.`, 'success');
-            }, 300);
+            try {
+              const verifyResponse = await fetch('/api/moneroo/verify', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ transactionId: pending.monerooTransactionId })
+              });
+              const verifyData = await verifyResponse.json();
+              const txStatus = verifyData.data?.status || verifyData.status;
+              
+              console.log('[VERIFY CREDITS] Moneroo status:', txStatus, verifyData);
+              
+              if (txStatus !== 'success' && txStatus !== 'successful') {
+                console.warn('[VERIFY CREDITS] Payment not confirmed by Moneroo:', txStatus);
+                creditPaymentProcessedRef.current = false;
+                window.history.replaceState({}, document.title, window.location.pathname);
+                
+                setTimeout(() => {
+                  showToast(`Paiement non confirmé. Statut: ${txStatus || 'inconnu'}`, 'error');
+                }, 300);
+                return;
+              }
+            } catch (verifyError) {
+              console.error('[VERIFY CREDITS] Moneroo verification error:', verifyError);
+              // En cas d'erreur réseau, on continue (mode dégradé)
+              console.warn('[VERIFY CREDITS] Proceeding without verification (network error)');
+            }
           }
+          
+          const newCredits = (currentUser.songCredits || 0) + pending.credits;
+          const updatedUser = { ...currentUser, songCredits: newCredits };
+          await d1Database.saveUser(updatedUser);
+          setUser(updatedUser);
+          localStorage.removeItem('sonorya_pending_purchase');
+          window.history.replaceState({}, document.title, window.location.pathname);
+          
+          console.log('[VERIFY CREDITS] Credits added:', pending.credits, '-> Total:', newCredits);
+          
+          setTimeout(() => {
+            showToast(`🎉 Paiement réussi ! ${pending.credits} crédits ont été ajoutés à votre compte.`, 'success');
+          }, 300);
         } catch (e) {
           console.error('[PAYMENT VERIFY ERROR]', e);
+          creditPaymentProcessedRef.current = false;
         }
-      }
+      };
+      
+      processCredits();
     } else if (paymentStatus === 'verify_song') {
       setDashboardView('create');
-      setAppView('dashboard');
     }
   }, [user]);
 

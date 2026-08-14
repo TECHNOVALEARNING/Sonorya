@@ -41,7 +41,8 @@ export class AuthRepository {
           country: data.country || 'Bénin',
           role: data.role as 'admin' | 'user',
           referralCode: data.referral_code,
-          bonusCredits: data.bonus_credits,
+          bonusCredits: data.bonus_credits || 0,
+          songCredits: data.song_credits || 0,
           createdAt: data.created_at,
           totalSongs: 0,
           status: data.status
