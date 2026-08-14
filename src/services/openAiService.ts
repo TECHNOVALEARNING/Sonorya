@@ -17,15 +17,15 @@ export class OpenAiService {
 
     // Use Pollinations AI text generation (free, no API key needed)
     try {
-      const systemPrompt = `You are a professional songwriter. Write song lyrics in ${langLabel} language ONLY. Structure them with [Verse 1], [Chorus], [Verse 2], [Bridge], [Outro] tags. Keep lyrics under 2000 characters. Do NOT add any explanations or comments. Write ONLY the lyrics.`;
+      const systemPrompt = `You are a professional songwriter. Write song lyrics in ${langLabel} language ONLY. Structure them with [Verse 1], [Chorus], [Verse 2], [Bridge], [Chorus], [Outro] tags. Keep lyrics between 1000 and 2000 characters. Do NOT add any explanations or comments. Write ONLY the lyrics. Ensure the vocabulary is rich, poetic, and creative.`;
       
-      const userPrompt = `Write song lyrics in ${langLabel} for a ${params.genre} song. 
+      const userPrompt = `Write rich, poetic, and meaningful song lyrics in ${langLabel} for a ${params.genre} song. 
 Occasion: ${params.occasion}. 
 Dedicated to: ${name}. 
 Story/Context: ${story}. 
 Mood: ${params.vibe}. 
 Voice: ${params.voiceGender}.
-The lyrics must be emotional, personal, and rhyming. Use the person's name "${name}" in the lyrics.`;
+The lyrics must be highly emotional, personal, and well-structured with at least two verses, a bridge, and a catchy chorus. Use the person's name "${name}" in the lyrics. Be very creative and avoid generic clichés.`;
 
       const response = await fetch('https://text.pollinations.ai/', {
         method: 'POST',
@@ -36,7 +36,7 @@ The lyrics must be emotional, personal, and rhyming. Use the person's name "${na
             { role: 'user', content: userPrompt }
           ],
           model: 'openai',
-          temperature: 0.75
+          temperature: 0.85
         })
       });
 
@@ -70,42 +70,45 @@ The lyrics must be emotional, personal, and rhyming. Use the person's name "${na
 
     if (isFrench) {
       return `[Verse 1]
-${name}, aujourd'hui c'est ton jour de gloire
-On écrit ensemble la plus belle des histoires
+${name}, aujourd'hui la vie célèbre ton nom
+Nos cœurs s'accordent tous sur le même diapason
 ${story}
-Chaque moment avec toi est un trésor de mémoire
+Dans chaque sourire se cache une nouvelle chanson
 
 [Chorus]
-${name}, ${name}, on chante pour toi ce soir
-Pour ton ${params.occasion}, que brille chaque étoile
-Les rythmes ${params.genre} résonnent dans nos cœurs
-${name}, tu mérites tout ce bonheur
+${name}, oh ${name}, c'est ton moment d'éclat
+Pour ton ${params.occasion}, le monde entier s'ouvre à toi
+Laisse la magie opérer, laisse-toi porter par nos voix
+${name}, tu mérites l'amour qui coule sous ce toit
 
 [Verse 2]
-De Cotonou à Paris, de Dakar à Lomé
-Ta lumière traverse les frontières, impossible à oublier
-Tes proches, ta famille, tous réunis pour célébrer
-Ce jour unique qui ne peut se répéter
+Les souvenirs que l'on tisse ne s'effaceront jamais
+Même les tempêtes lointaines se sont mises à chanter
+C'est ta présence unique qui vient tout illuminer
+Une étincelle précieuse que rien ne peut remplacer
 
 [Bridge]
-Oh ${name}, reçois cet hymne d'amour
-Ces mots gravés en musique pour toujours
+Quand le rythme s'accélère et que la nuit descend
+On gardera cette mélodie à travers l'océan
+Que le meilleur reste à venir, à partir de maintenant
 
 [Chorus]
-${name}, ${name}, on chante pour toi ce soir
-Pour ton ${params.occasion}, que brille chaque étoile
-Les rythmes ${params.genre} résonnent dans nos cœurs
-${name}, tu mérites tout ce bonheur
+${name}, oh ${name}, c'est ton moment d'éclat
+Pour ton ${params.occasion}, le monde entier s'ouvre à toi
+Laisse la magie opérer, laisse-toi porter par nos voix
+${name}, tu mérites l'amour qui coule sous ce toit
 
 [Outro]
-${name}... en musique, pour toujours et à jamais`;
+Cette chanson est pour toi...
+Garde-la précieusement, ${name}...
+Aujourd'hui, demain, et pour toujours...`;
     }
 
     return `[Verse 1]
-${name}, today is your day to shine
-Every moment with you feels so divine
+${name}, today the world celebrates your light
+Every moment we share shines incredibly bright
 ${story}
-Together we celebrate this beautiful time
+Together we stand on this beautiful night
 
 [Chorus]
 ${name}, ${name}, we sing this song for you

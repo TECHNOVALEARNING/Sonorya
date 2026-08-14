@@ -204,21 +204,13 @@ export const LyricsDisplayPanel: React.FC<LyricsDisplayPanelProps> = ({
               return (
                 <div
                   key={idx}
-                  ref={isActive ? activeLineRef : null}
                   style={{
-                    padding: isActive ? '8px 14px' : '4px 8px',
-                    borderRadius: isActive ? 12 : 6,
-                    background: isActive
-                      ? 'linear-gradient(90deg, rgba(45, 212, 191, 0.24) 0%, rgba(245, 185, 120, 0.18) 100%)'
-                      : 'transparent',
-                    borderLeft: isActive ? '4px solid #2DD4BF' : '4px solid transparent',
-                    color: isActive ? '#FFFFFF' : 'rgba(255, 255, 255, 0.75)',
-                    fontSize: isActive ? 15.5 : 14,
-                    fontWeight: isActive ? 800 : 500,
-                    textShadow: isActive ? '0 0 12px rgba(45, 212, 191, 0.8), 0 0 20px rgba(245, 185, 120, 0.4)' : 'none',
-                    transform: isActive ? 'scale(1.02)' : 'none',
-                    transition: 'all 0.35s cubic-bezier(0.4, 0, 0.2, 1)',
-                    boxShadow: isActive ? '0 4px 16px rgba(45, 212, 191, 0.2)' : 'none'
+                    padding: '4px 8px',
+                    borderRadius: 6,
+                    color: 'rgba(255, 255, 255, 0.75)',
+                    fontSize: 14,
+                    fontWeight: 500,
+                    lineHeight: 1.6
                   }}
                 >
                   {line}
