@@ -211,7 +211,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout, 
     recentPayments: allSongs.map(s => ({
       id: 'p-' + s.id,
       userId: s.userId || 'user-current',
-      reference: 'SON-' + s.id.replace('song-', '').substring(0, 6).toUpperCase(),
+      reference: 'SON-' + s.id.substring(0, 6).toUpperCase(),
       provider: (s.paymentProvider || 'MTN MoMo') as MobilePaymentProvider,
       amountFcfa: s.priceFcfa || 2500,
       status: 'successful',

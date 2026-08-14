@@ -300,7 +300,7 @@ export const SongWizard: React.FC<SongWizardProps> = ({
           confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 } });
 
           const newSong: Song = {
-            id: 'song-' + Math.floor(100000 + Math.random() * 900000),
+            id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => { const r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8); return v.toString(16); }),
             userId: 'user-current',
             title: recipientName ? recipientName.trim() : finalOccasion,
             occasion: finalOccasion,
