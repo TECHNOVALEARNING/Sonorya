@@ -551,9 +551,9 @@ export const DashboardMain: React.FC<MainProps> = ({ user, orders, onPlaySong, o
         </>
       )}
 
-      {/* Dashboard internal footer to finish the scroll gracefully */}
-      <div style={{ textAlign: 'center', padding: '20px 0 10px', marginTop: 'auto', borderTop: '1px solid rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.2)', fontSize: 12 }}>
-        © {new Date().getFullYear()} Mélodia AI. {t('dashboard.allRightsReserved')}
+      {/* Dashboard internal footer */}
+      <div style={{ textAlign: 'center', padding: '24px 0 16px', marginTop: 'auto', borderTop: '1px solid rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.3)', fontSize: 12 }}>
+        © {new Date().getFullYear()} Sonorya by Technova. {t('dashboard.allRightsReserved')}
       </div>
     </main>
   );

@@ -245,157 +245,211 @@ export const DashboardPlayer: React.FC<PlayerProps> = ({
     }
   };
 
-  const songTitle = currentSong?.title || 'Chanson Personnalisée Sonorya';
-  const songRecipient = currentSong?.recipientName || 'Sonorya Studio';
-  const songCover = currentSong?.coverUrl || '/images/cover_amapiano_party.png';
-  const isFav = currentSong?.isFavorite || false;
+  if (!currentSong) {
+    return null;
+  }
+
+  const songTitle = currentSong.title || 'Chanson Personnalisée Sonorya';
+  const songRecipient = currentSong.recipientName || 'Sonorya Studio';
+  const songCover = currentSong.coverUrl || '/images/cover_amapiano_party.png';
+  const isFav = currentSong.isFavorite || false;
 
   return (
-    <div
-      className="dashboard-horizontal-player"
-      style={{
-        position: 'fixed',
-        bottom: 0,
-        left: 240,
-        right: 360,
-        height: 76,
-        background: 'linear-gradient(180deg, rgba(45,212,191,0.15) 0%, rgba(18,20,29,0.98) 40%, #12141D 100%)',
-        backdropFilter: 'blur(20px)',
-        borderTop: '1px solid rgba(45, 212, 191, 0.25)',
-        borderLeft: '1px solid rgba(255, 255, 255, 0.08)',
-        borderRight: '1px solid rgba(255, 255, 255, 0.08)',
-        boxShadow: '0 -10px 40px rgba(0, 0, 0, 0.8), 0 -2px 15px rgba(45, 212, 191, 0.15)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        padding: '0 20px',
-        zIndex: 1000
-      }}
-    >
-      {/* Left: Cover Art, Title & Mode Toggles */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 14, minWidth: 260 }}>
-        <img
-          src={songCover}
-          alt="Cover"
-          style={{
-            width: 50,
-            height: 50,
-            borderRadius: isPlaying ? '50%' : '12px',
-            objectFit: 'cover',
-            border: isPlaying ? '2px solid rgba(45, 212, 191, 0.6)' : '1px solid rgba(255, 255, 255, 0.1)',
-            boxShadow: isPlaying ? '0 0 20px rgba(45, 212, 191, 0.6), 0 4px 14px rgba(0, 0, 0, 0.7)' : '0 4px 14px rgba(0, 0, 0, 0.5)',
-            animation: isPlaying ? 'vinylSpin 6s linear infinite' : 'none',
-            transition: 'border-radius 0.4s ease, border 0.4s ease, box-shadow 0.4s ease',
-            flexShrink: 0
-          }}
-        />
-        <div style={{ overflow: 'hidden' }}>
-          <div style={{ fontSize: 14.5, fontWeight: 800, color: '#FFFFFF', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontFamily: 'Manrope, sans-serif' }}>
-            {songTitle}
+    <>
+      {/* =========================================================
+          DESKTOP FULL HORIZONTAL PLAYER
+          ========================================================= */}
+      <div
+        className="dashboard-desktop-player"
+      >
+        {/* Left: Cover Art, Title & Mode Toggles */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, minWidth: 240 }}>
+          <img
+            src={songCover}
+            alt="Cover"
+            style={{
+              width: 48,
+              height: 48,
+              borderRadius: isPlaying ? '50%' : '10px',
+              objectFit: 'cover',
+              border: isPlaying ? '2px solid rgba(45, 212, 191, 0.6)' : '1px solid rgba(255, 255, 255, 0.1)',
+              boxShadow: isPlaying ? '0 0 16px rgba(45, 212, 191, 0.5)' : 'none',
+              animation: isPlaying ? 'vinylSpin 6s linear infinite' : 'none',
+              transition: 'all 0.3s ease',
+              flexShrink: 0
+            }}
+          />
+          <div style={{ overflow: 'hidden' }}>
+            <div style={{ fontSize: 14, fontWeight: 700, color: '#FFFFFF', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {songTitle}
+            </div>
+            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', marginTop: 2 }}>
+              {t('home.for')} {songRecipient}
+            </div>
           </div>
-          <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', marginTop: 2 }}>
-            {t('home.for')} {songRecipient}
+          <div style={{ display: 'flex', gap: 4, marginLeft: 6 }}>
+            <button 
+              onClick={() => setIsShuffle(!isShuffle)} 
+              style={{ background: 'none', border: 'none', color: isShuffle ? '#2DD4BF' : 'rgba(255,255,255,0.4)', cursor: 'pointer', padding: 4 }} 
+              title="Lecture Aléatoire"
+            >
+              <Shuffle size={15} />
+            </button>
+            <button 
+              onClick={() => setIsRepeat(!isRepeat)} 
+              style={{ background: 'none', border: 'none', color: isRepeat ? '#2DD4BF' : 'rgba(255,255,255,0.4)', cursor: 'pointer', padding: 4 }} 
+              title="Répéter"
+            >
+              <Repeat size={15} />
+            </button>
           </div>
         </div>
-        <div style={{ display: 'flex', gap: 6, marginLeft: 8 }}>
-          <button 
-            onClick={() => setIsShuffle(!isShuffle)} 
-            style={{ background: 'none', border: 'none', color: isShuffle ? '#2DD4BF' : 'rgba(255,255,255,0.5)', cursor: 'pointer', padding: 4 }} 
-            title="Lecture Aléatoire (Shuffle)"
-          >
-            <Shuffle size={16} />
+
+        {/* Center: Controls & Scrubber */}
+        <div style={{ flex: 1, maxWidth: 580, margin: '0 20px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+            <button onClick={onPrev} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.8)', cursor: 'pointer' }} title="Piste précédente">
+              <SkipBack size={18} fill="currentColor" />
+            </button>
+            
+            <button onClick={() => handleSeekDelta(-10)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.6)', cursor: 'pointer' }} title="Reculer de 10 sec">
+              <RotateCcw size={15} />
+            </button>
+
+            <button
+              onClick={onTogglePlay}
+              style={{
+                width: 38,
+                height: 38,
+                borderRadius: '50%',
+                background: '#FFFFFF',
+                color: '#0F172A',
+                border: 'none',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                boxShadow: '0 4px 12px rgba(255,255,255,0.25)'
+              }}
+            >
+              {isPlaying ? <Pause size={18} fill="currentColor" /> : <Play size={18} fill="currentColor" style={{ marginLeft: 2 }} />}
+            </button>
+
+            <button onClick={() => handleSeekDelta(10)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.6)', cursor: 'pointer' }} title="Avancer de 10 sec">
+              <RotateCw size={15} />
+            </button>
+
+            <button onClick={onNext} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.8)', cursor: 'pointer' }} title="Piste suivante">
+              <SkipForward size={18} fill="currentColor" />
+            </button>
+          </div>
+
+          {/* Progress Bar & Time */}
+          <div style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', fontWeight: 600, minWidth: 32, textAlign: 'right' }}>{elapsed}</span>
+            <div 
+              onClick={handleSeek}
+              style={{ flex: 1, height: 6, background: 'rgba(255,255,255,0.12)', borderRadius: 99, position: 'relative', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+            >
+              <div style={{ position: 'absolute', top: 0, left: 0, height: '100%', width: `${progress}%`, background: 'linear-gradient(90deg, #2DD4BF, #0EA5E9)', borderRadius: 99 }} />
+              <div style={{ position: 'absolute', left: `calc(${progress}% - 5px)`, width: 10, height: 10, background: '#2DD4BF', borderRadius: '50%', boxShadow: '0 0 10px #2DD4BF' }} />
+            </div>
+            <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', fontWeight: 600, minWidth: 32 }}>{totalFormatted}</span>
+          </div>
+        </div>
+
+        {/* Right: Volume & Actions */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 200, justifyContent: 'flex-end' }}>
+          <button onClick={() => onToggleFavorite(currentSong.id)} style={{ background: 'none', border: 'none', color: isFav ? '#2DD4BF' : 'rgba(255,255,255,0.5)', cursor: 'pointer' }} title="Favoris">
+            <Heart size={16} fill={isFav ? 'currentColor' : 'none'} />
           </button>
-          <button 
-            onClick={() => setIsRepeat(!isRepeat)} 
-            style={{ background: 'none', border: 'none', color: isRepeat ? '#2DD4BF' : 'rgba(255,255,255,0.5)', cursor: 'pointer', padding: 4 }} 
-            title="Répéter la chanson (Repeat)"
-          >
-            <Repeat size={16} />
+          <button onClick={handleShare} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.5)', cursor: 'pointer' }} title={t('player.share')}>
+            <Share2 size={16} />
           </button>
+          <button onClick={handleDownload} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.5)', cursor: 'pointer' }} title={t('player.download')}>
+            <Download size={16} />
+          </button>
+
+          {/* Volume Controls */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, width: 90, marginLeft: 4 }}>
+            <button onClick={() => setIsMuted(!isMuted)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.7)', cursor: 'pointer', padding: 0 }}>
+              {isMuted || volume === 0 ? <VolumeX size={15} style={{ color: '#FF6B5B' }} /> : <Volume2 size={15} />}
+            </button>
+            <input
+              type="range"
+              min="0"
+              max="100"
+              value={isMuted ? 0 : volume}
+              onChange={(e) => { setIsMuted(false); setVolume(Number(e.target.value)); }}
+              style={{ width: '100%', accentColor: '#2DD4BF', cursor: 'pointer' }}
+            />
+          </div>
         </div>
       </div>
 
-      {/* Center: Controls & Scrubber */}
-      <div style={{ flex: 1, maxWidth: 640, margin: '0 24px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-          <button onClick={onPrev} style={{ background: 'none', border: 'none', color: '#FFFFFF', cursor: 'pointer' }} title="Piste précédente">
-            <SkipBack size={18} fill="currentColor" />
-          </button>
-          
-          <button onClick={() => handleSeekDelta(-10)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.8)', cursor: 'pointer' }} title="Reculer de 10 sec">
-            <RotateCcw size={16} />
+      {/* =========================================================
+          MOBILE FLOATING MINI-PLAYER
+          ========================================================= */}
+      <div className="dashboard-mobile-mini-player">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1, overflow: 'hidden' }}>
+          <img
+            src={songCover}
+            alt="Cover"
+            style={{
+              width: 38,
+              height: 38,
+              borderRadius: isPlaying ? '50%' : '8px',
+              objectFit: 'cover',
+              border: '1px solid rgba(255,255,255,0.1)',
+              animation: isPlaying ? 'vinylSpin 6s linear infinite' : 'none',
+              flexShrink: 0
+            }}
+          />
+          <div style={{ overflow: 'hidden', flex: 1 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: '#FFFFFF', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {songTitle}
+            </div>
+            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {songRecipient}
+            </div>
+          </div>
+        </div>
+
+        {/* Mobile Mini Controls */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <button 
+            onClick={() => onToggleFavorite(currentSong.id)} 
+            style={{ background: 'none', border: 'none', color: isFav ? '#2DD4BF' : 'rgba(255,255,255,0.6)', cursor: 'pointer', padding: 6 }}
+          >
+            <Heart size={16} fill={isFav ? 'currentColor' : 'none'} />
           </button>
 
           <button
             onClick={onTogglePlay}
             style={{
-              width: 42,
-              height: 42,
+              width: 34,
+              height: 34,
               borderRadius: '50%',
-              background: '#FFFFFF',
+              background: 'linear-gradient(135deg, #2DD4BF, #0EA5E9)',
               color: '#0F172A',
               border: 'none',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              cursor: 'pointer',
-              boxShadow: '0 4px 14px rgba(255,255,255,0.35)'
+              cursor: 'pointer'
             }}
           >
-            {isPlaying ? <Pause size={20} fill="currentColor" /> : <Play size={20} fill="currentColor" style={{ marginLeft: 2 }} />}
+            {isPlaying ? <Pause size={16} fill="currentColor" /> : <Play size={16} fill="currentColor" style={{ marginLeft: 1 }} />}
           </button>
 
-          <button onClick={() => handleSeekDelta(10)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.8)', cursor: 'pointer' }} title="Avancer de 10 sec">
-            <RotateCw size={16} />
-          </button>
-
-          <button onClick={onNext} style={{ background: 'none', border: 'none', color: '#FFFFFF', cursor: 'pointer' }} title="Piste suivante">
-            <SkipForward size={18} fill="currentColor" />
-          </button>
-        </div>
-
-        {/* Progress Bar & Time */}
-        <div style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 12 }}>
-          <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', fontWeight: 600, minWidth: 36, textAlign: 'right' }}>{elapsed}</span>
-          <div 
-            onClick={handleSeek}
-            style={{ flex: 1, height: 8, background: 'rgba(255,255,255,0.15)', borderRadius: 99, position: 'relative', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+          <button 
+            onClick={onNext} 
+            style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.7)', cursor: 'pointer', padding: 6 }}
           >
-            <div style={{ position: 'absolute', top: 0, left: 0, height: '100%', width: `${progress}%`, background: 'linear-gradient(90deg, #2DD4BF, #0EA5E9)', borderRadius: 99 }} />
-            <div style={{ position: 'absolute', left: `calc(${progress}% - 6px)`, width: 12, height: 12, background: '#2DD4BF', borderRadius: '50%', boxShadow: '0 0 12px #2DD4BF' }} />
-          </div>
-          <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', fontWeight: 600, minWidth: 36 }}>{totalFormatted}</span>
-        </div>
-      </div>
-
-      {/* Right: Volume & Actions */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 14, minWidth: 220, justifyContent: 'flex-end' }}>
-        <button onClick={() => currentSong && onToggleFavorite(currentSong.id)} style={{ background: 'none', border: 'none', color: isFav ? '#2DD4BF' : 'rgba(255,255,255,0.6)', cursor: 'pointer' }} title="Ajouter aux favoris">
-          <Heart size={18} fill={isFav ? 'currentColor' : 'none'} />
-        </button>
-        <button onClick={handleShare} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.6)', cursor: 'pointer' }} title={t('player.share')}>
-          <Share2 size={18} />
-        </button>
-        <button onClick={handleDownload} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.6)', cursor: 'pointer' }} title={t('player.download')}>
-          <Download size={18} />
-        </button>
-
-        {/* Volume Controls */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, width: 110, marginLeft: 6 }}>
-          <button onClick={() => setIsMuted(!isMuted)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.8)', cursor: 'pointer', padding: 0 }}>
-            {isMuted || volume === 0 ? <VolumeX size={16} style={{ color: '#FF6B5B' }} /> : <Volume2 size={16} />}
+            <SkipForward size={16} fill="currentColor" />
           </button>
-          <input
-            type="range"
-            min="0"
-            max="100"
-            value={isMuted ? 0 : volume}
-            onChange={(e) => { setIsMuted(false); setVolume(Number(e.target.value)); }}
-            style={{ width: '100%', accentColor: '#2DD4BF', cursor: 'pointer' }}
-            title={`Volume: ${isMuted ? 0 : volume}%`}
-          />
         </div>
       </div>
-    </div>
+    </>
   );
 };

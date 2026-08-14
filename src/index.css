@@ -1763,3 +1763,65 @@ footer a:hover {
 .mobile-bottom-nav button.active {
   color: var(--teal);
 }
+
+/* =========================================================
+   DASHBOARD PLAYER RESPONSIVE STYLES
+   ========================================================= */
+.dashboard-desktop-player {
+  position: fixed;
+  bottom: 0;
+  left: 240px;
+  right: 0;
+  height: 72px;
+  background: linear-gradient(180deg, rgba(20, 24, 36, 0.98) 0%, rgba(14, 17, 26, 0.99) 100%);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  z-index: 100;
+}
+
+.dashboard-mobile-mini-player {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .dashboard-desktop-player {
+    display: none !important;
+  }
+
+  .dashboard-mobile-mini-player {
+    display: flex !important;
+    position: fixed;
+    bottom: 64px;
+    left: 12px;
+    right: 12px;
+    height: 52px;
+    background: rgba(18, 20, 29, 0.95);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(45, 212, 191, 0.35);
+    border-radius: 16px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.7), 0 0 15px rgba(45, 212, 191, 0.15);
+    padding: 0 12px;
+    align-items: center;
+    justify-content: space-between;
+    z-index: 95;
+    animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
