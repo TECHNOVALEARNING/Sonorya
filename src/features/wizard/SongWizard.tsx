@@ -81,7 +81,6 @@ export const SongWizard: React.FC<SongWizardProps> = ({
         // Vérifier le paiement auprès de Moneroo avant de créditer
         if (pending.monerooTransactionId) {
           console.log('[VERIFY SONG] Verifying Moneroo transaction:', pending.monerooTransactionId);
-          
           try {
             const verifyResponse = await fetch('/api/moneroo/verify', {
               method: 'POST',
@@ -89,29 +88,18 @@ export const SongWizard: React.FC<SongWizardProps> = ({
               body: JSON.stringify({ transactionId: pending.monerooTransactionId })
             });
             const verifyData = await verifyResponse.json();
-            const txStatus = verifyData.data?.status || verifyData.status;
-            
+            const txStatus = String(verifyData.data?.status || verifyData.status || '').toLowerCase();
             console.log('[VERIFY SONG] Moneroo status:', txStatus, verifyData);
             
-            if (txStatus !== 'success' && txStatus !== 'successful') {
-              console.warn('[VERIFY SONG] Payment not confirmed by Moneroo:', txStatus);
-              // Ne pas supprimer les données en attente - l'utilisateur pourra réessayer
+            if (txStatus && ['failed', 'cancelled', 'canceled', 'expired', 'declined'].includes(txStatus)) {
               paymentProcessedRef.current = false;
-              alert('Le paiement n\'a pas été confirmé par Moneroo. Statut: ' + (txStatus || 'inconnu'));
+              alert('Le paiement a échoué ou a été annulé (' + txStatus + ').');
               window.history.replaceState({}, document.title, window.location.pathname);
               return;
             }
           } catch (verifyError) {
-            console.error('[VERIFY SONG] Moneroo verification error:', verifyError);
-            // En cas d'erreur réseau de vérification, on continue quand même (mode dégradé)
-            console.warn('[VERIFY SONG] Proceeding without Moneroo verification (network error)');
+            console.warn('[VERIFY SONG] Moneroo verification error, proceeding to generation:', verifyError);
           }
-        }
-        
-        // Si l'utilisateur ne correspond pas, ignorer
-        if (pending.userId && pending.userId !== user.id && pending.userId !== 'user-current') {
-          console.warn('[VERIFY SONG] User ID mismatch:', pending.userId, user.id);
-          return;
         }
         
         // Créditer l'utilisateur s'il a pris un pack avec des crédits supplémentaires

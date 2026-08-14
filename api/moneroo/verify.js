@@ -10,7 +10,7 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Missing transactionId' });
     }
 
-    const monerooApiKey = process.env.VITE_MONEROO_API_KEY || process.env.MONEROO_API_KEY || '';
+    const monerooApiKey = process.env.VITE_MONEROO_API_KEY || process.env.MONEROO_API_KEY || 'pvk_wuaku5|01KZRX559GAV881JTXAGW7R5EG';
 
     console.log('[MONEROO VERIFY] Checking transaction:', transactionId);
 

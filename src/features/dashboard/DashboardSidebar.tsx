@@ -2,6 +2,8 @@ import React from 'react';
 import { Home, Compass, PlusCircle, Library, Heart, Disc, Settings, LogOut, User, X } from 'lucide-react';
 import { useTranslation } from '../../i18n/LanguageContext';
 
+import { UserProfile } from '../../types/melodia';
+
 interface SidebarProps {
   onNavigate: (view: string) => void;
   onLogout: () => void;
@@ -10,6 +12,8 @@ interface SidebarProps {
   onBackToLanding?: () => void;
   isOpen?: boolean;
   onClose?: () => void;
+  user?: UserProfile | null;
+  onOpenRechargeCredits?: () => void;
 }
 
 export const DashboardSidebar: React.FC<SidebarProps> = ({ 
@@ -19,7 +23,9 @@ export const DashboardSidebar: React.FC<SidebarProps> = ({
   currentView, 
   onBackToLanding,
   isOpen = false,
-  onClose
+  onClose,
+  user,
+  onOpenRechargeCredits
 }) => {
   const { t } = useTranslation();
 
@@ -98,6 +104,65 @@ export const DashboardSidebar: React.FC<SidebarProps> = ({
               }}
             >
               <X size={18} />
+            </button>
+          )}
+        </div>
+
+        {/* Credit Balance Card (Desktop & Mobile) */}
+        <div 
+          style={{ 
+            margin: '0 0 20px',
+            padding: '12px 14px', 
+            background: 'linear-gradient(135deg, rgba(212, 161, 57, 0.14) 0%, rgba(45, 212, 191, 0.08) 100%)',
+            border: '1px solid rgba(212, 161, 57, 0.32)',
+            borderRadius: 12,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 8
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--gold)' }}>
+              ⚡ Mes Crédits
+            </span>
+            <span style={{ fontSize: 10, background: 'rgba(212, 161, 57, 0.25)', color: '#FCD34D', padding: '2px 6px', borderRadius: 99, fontWeight: 800 }}>
+              SOLDE
+            </span>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
+            <span style={{ fontSize: 24, fontWeight: 900, fontFamily: 'Fraunces, serif', color: 'var(--ivory)', lineHeight: 1 }}>
+              {(user?.songCredits || 0) + (user?.bonusCredits || 0)}
+            </span>
+            <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)', fontWeight: 600 }}>
+              chanson{(user?.songCredits || 0) + (user?.bonusCredits || 0) > 1 ? 's' : ''} disponible{(user?.songCredits || 0) + (user?.bonusCredits || 0) > 1 ? 's' : ''}
+            </span>
+          </div>
+
+          {onOpenRechargeCredits && (
+            <button
+              onClick={() => {
+                if (onClose) onClose();
+                onOpenRechargeCredits();
+              }}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 6,
+                padding: '7px 10px',
+                background: 'linear-gradient(135deg, #2DD4BF, #0EA5E9)',
+                color: '#0F172A',
+                border: 'none',
+                borderRadius: 8,
+                fontSize: 11,
+                fontWeight: 800,
+                cursor: 'pointer',
+                transition: 'transform 0.15s ease',
+                boxShadow: '0 2px 8px rgba(45, 212, 191, 0.25)'
+              }}
+            >
+              <span>+ Recharger mes crédits</span>
             </button>
           )}
         </div>

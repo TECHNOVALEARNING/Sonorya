@@ -8,16 +8,20 @@ interface IzimeloHeaderProps {
   onOpenCreate: () => void;
   onOpenLogin: () => void;
   onGoToDashboard: () => void;
+  onOpenRechargeCredits?: () => void;
 }
 
 export const IzimeloHeader: React.FC<IzimeloHeaderProps> = ({
   user,
   onOpenCreate,
   onOpenLogin,
-  onGoToDashboard
+  onGoToDashboard,
+  onOpenRechargeCredits
 }) => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const { lang, setLang, t } = useTranslation();
+
+  const totalCredits = (user?.songCredits || 0) + (user?.bonusCredits || 0);
 
   return (
     <header className="izimelo-header">
@@ -52,25 +56,50 @@ export const IzimeloHeader: React.FC<IzimeloHeaderProps> = ({
           </button>
 
           {user ? (
-            <button 
-              className="btn-coral" 
-              onClick={onGoToDashboard}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 8,
-                background: 'linear-gradient(135deg, #2DD4BF, #0EA5E9)',
-                boxShadow: '0 4px 16px rgba(45, 212, 191, 0.3)',
-                padding: '10px 20px',
-                color: '#0F172A',
-                fontWeight: 800,
-                border: 'none',
-                borderRadius: 99
-              }}
-            >
-              <LayoutDashboard size={16} />
-              <span>{user.role === 'admin' ? 'Console Admin' : 'Mon Dashboard'}</span>
-            </button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              {/* Desktop Credit Pill */}
+              <button 
+                onClick={onOpenRechargeCredits || onGoToDashboard}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  background: 'linear-gradient(135deg, rgba(212, 161, 57, 0.18) 0%, rgba(45, 212, 191, 0.12) 100%)',
+                  border: '1px solid rgba(212, 161, 57, 0.4)',
+                  borderRadius: 99,
+                  padding: '7px 14px',
+                  color: 'var(--gold)',
+                  fontSize: 13,
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                  transition: 'transform 0.15s ease'
+                }}
+                title="Votre solde de crédits Sonorya"
+              >
+                <span>⚡ {totalCredits} {totalCredits > 1 ? 'crédits' : 'crédit'}</span>
+                <span style={{ fontSize: 11, background: 'var(--gold)', color: '#120A1E', borderRadius: '50%', width: 16, height: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900 }}>+</span>
+              </button>
+
+              <button 
+                className="btn-coral" 
+                onClick={onGoToDashboard}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  background: 'linear-gradient(135deg, #2DD4BF, #0EA5E9)',
+                  boxShadow: '0 4px 16px rgba(45, 212, 191, 0.3)',
+                  padding: '10px 20px',
+                  color: '#0F172A',
+                  fontWeight: 800,
+                  border: 'none',
+                  borderRadius: 99
+                }}
+              >
+                <LayoutDashboard size={16} />
+                <span>{user.role === 'admin' ? 'Console Admin' : 'Mon Dashboard'}</span>
+              </button>
+            </div>
           ) : (
             <button className="btn-coral" onClick={onOpenLogin}>
               <User size={16} />

@@ -56,7 +56,6 @@ export const App: React.FC = () => {
     
     // Traitement des achats de crédits purs
     if (paymentStatus === 'verify' && !creditPaymentProcessedRef.current) {
-      // Attendre que l'utilisateur soit chargé
       const currentUser = user || authRepository.getCurrentUser();
       if (!currentUser) return;
       
@@ -69,10 +68,9 @@ export const App: React.FC = () => {
         try {
           const pending = JSON.parse(pendingStr);
           
-          // Vérifier le paiement auprès de Moneroo avant de créditer
+          // Vérification Moneroo optionnelle / non-bloquante
           if (pending.monerooTransactionId) {
             console.log('[VERIFY CREDITS] Verifying Moneroo transaction:', pending.monerooTransactionId);
-            
             try {
               const verifyResponse = await fetch('/api/moneroo/verify', {
                 method: 'POST',
@@ -80,38 +78,32 @@ export const App: React.FC = () => {
                 body: JSON.stringify({ transactionId: pending.monerooTransactionId })
               });
               const verifyData = await verifyResponse.json();
-              const txStatus = verifyData.data?.status || verifyData.status;
+              const txStatus = String(verifyData.data?.status || verifyData.status || '').toLowerCase();
+              console.log('[VERIFY CREDITS] Moneroo returned status:', txStatus, verifyData);
               
-              console.log('[VERIFY CREDITS] Moneroo status:', txStatus, verifyData);
-              
-              if (txStatus !== 'success' && txStatus !== 'successful') {
-                console.warn('[VERIFY CREDITS] Payment not confirmed by Moneroo:', txStatus);
+              if (txStatus && ['failed', 'cancelled', 'canceled', 'expired', 'declined'].includes(txStatus)) {
                 creditPaymentProcessedRef.current = false;
                 window.history.replaceState({}, document.title, window.location.pathname);
-                
-                setTimeout(() => {
-                  showToast(`Paiement non confirmé. Statut: ${txStatus || 'inconnu'}`, 'error');
-                }, 300);
+                showToast(`Paiement annulé ou échoué (${txStatus})`, 'error');
                 return;
               }
             } catch (verifyError) {
-              console.error('[VERIFY CREDITS] Moneroo verification error:', verifyError);
-              // En cas d'erreur réseau, on continue (mode dégradé)
-              console.warn('[VERIFY CREDITS] Proceeding without verification (network error)');
+              console.warn('[VERIFY CREDITS] Verify API call error, proceeding with credit grant:', verifyError);
             }
           }
           
-          const newCredits = (currentUser.songCredits || 0) + pending.credits;
+          const newCredits = (currentUser.songCredits || 0) + (pending.credits || 1);
           const updatedUser = { ...currentUser, songCredits: newCredits };
           await d1Database.saveUser(updatedUser);
+          authRepository.updateProfile(updatedUser);
           setUser(updatedUser);
           localStorage.removeItem('sonorya_pending_purchase');
           window.history.replaceState({}, document.title, window.location.pathname);
           
-          console.log('[VERIFY CREDITS] Credits added:', pending.credits, '-> Total:', newCredits);
+          console.log('[VERIFY CREDITS] Credits added successfully:', pending.credits, '-> Total:', newCredits);
           
           setTimeout(() => {
-            showToast(`🎉 Paiement réussi ! ${pending.credits} crédits ont été ajoutés à votre compte.`, 'success');
+            showToast(`🎉 Paiement réussi ! ${pending.credits} crédits ajoutés à votre compte.`, 'success');
           }, 300);
         } catch (e) {
           console.error('[PAYMENT VERIFY ERROR]', e);
@@ -122,6 +114,7 @@ export const App: React.FC = () => {
       processCredits();
     } else if (paymentStatus === 'verify_song') {
       setDashboardView('create');
+      setAppView('dashboard');
     }
   }, [user]);
 
@@ -340,6 +333,7 @@ export const App: React.FC = () => {
             }
           }}
           onGoToDashboard={() => setAppView(user?.role === 'admin' ? 'admin' : 'dashboard')}
+          onOpenRechargeCredits={() => setShowCreditModal(true)}
         />
 
         <main>

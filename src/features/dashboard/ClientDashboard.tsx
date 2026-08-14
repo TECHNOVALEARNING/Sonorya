@@ -174,6 +174,8 @@ export const ClientDashboard: React.FC<ClientDashboardProps> = ({
         onBackToLanding={onBackToLanding}
         isOpen={isMobileMenuOpen}
         onClose={() => setIsMobileMenuOpen(false)}
+        user={user}
+        onOpenRechargeCredits={onOpenRechargeCredits}
       />
       
       {currentView === 'create' ? (
