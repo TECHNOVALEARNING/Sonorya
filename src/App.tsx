@@ -42,80 +42,127 @@ export const App: React.FC = () => {
     return () => unsubscribe();
   }, []);
 
-  // Intercepter les retours de paiement (Achat de Crédits purs et Chansons)
+  // Intercepter les retours de paiement Moneroo
+  // Le flux est entièrement sécurisé : Moneroo metadata → API serveur → Supabase
   const creditPaymentProcessedRef = React.useRef(false);
   
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const paymentStatus = urlParams.get('payment_status');
+    const paymentId = urlParams.get('paymentId') || urlParams.get('payment_id');
     
     if (!paymentStatus) return;
     
     // Toujours basculer vers le dashboard au retour de Moneroo
     setAppView('dashboard');
     
-    // Traitement des achats de crédits purs
+    // Traitement des achats de crédits
     if (paymentStatus === 'verify' && !creditPaymentProcessedRef.current) {
-      const currentUser = user || authRepository.getCurrentUser();
-      if (!currentUser) return;
-      
-      const pendingStr = localStorage.getItem('sonorya_pending_purchase');
-      if (!pendingStr) return;
+      if (!paymentId) {
+        console.warn('[PAYMENT] No paymentId in URL, cannot verify');
+        window.history.replaceState({}, document.title, window.location.pathname);
+        return;
+      }
       
       creditPaymentProcessedRef.current = true;
       
       const processCredits = async () => {
         try {
-          const pending = JSON.parse(pendingStr);
+          console.log('[PAYMENT] Verifying & crediting via server. PaymentId:', paymentId);
           
-          // Vérification Moneroo optionnelle / non-bloquante
-          if (pending.monerooTransactionId) {
-            console.log('[VERIFY CREDITS] Verifying Moneroo transaction:', pending.monerooTransactionId);
-            try {
-              const verifyResponse = await fetch('/api/moneroo/verify', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ transactionId: pending.monerooTransactionId })
-              });
-              const verifyData = await verifyResponse.json();
-              const txStatus = String(verifyData.data?.status || verifyData.status || '').toLowerCase();
-              console.log('[VERIFY CREDITS] Moneroo returned status:', txStatus, verifyData);
-              
-              if (txStatus && ['failed', 'cancelled', 'canceled', 'expired', 'declined'].includes(txStatus)) {
-                creditPaymentProcessedRef.current = false;
-                window.history.replaceState({}, document.title, window.location.pathname);
-                showToast(`Paiement annulé ou échoué (${txStatus})`, 'error');
-                return;
-              }
-            } catch (verifyError) {
-              console.warn('[VERIFY CREDITS] Verify API call error, proceeding with credit grant:', verifyError);
+          // Appel au endpoint sécurisé côté serveur
+          const response = await fetch('/api/moneroo/credit', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ transactionId: paymentId })
+          });
+          
+          const result = await response.json();
+          console.log('[PAYMENT] Server credit response:', result);
+          
+          if (result.success) {
+            // Re-synchroniser le profil depuis Supabase (qui a les crédits mis à jour)
+            // authRepository.syncProfile va relire la BDD et notifier les listeners
+            const freshUser = authRepository.getCurrentUser();
+            if (freshUser) {
+              authRepository.setCurrentUserLocally({ songCredits: result.credits });
+              setUser({ ...freshUser, songCredits: result.credits });
             }
+            
+            window.history.replaceState({}, document.title, window.location.pathname);
+            
+            setTimeout(() => {
+              showToast(`🎉 Paiement réussi ! ${result.added} crédits ajoutés à votre compte. Total : ${result.credits}`, 'success');
+            }, 300);
+          } else {
+            creditPaymentProcessedRef.current = false;
+            window.history.replaceState({}, document.title, window.location.pathname);
+            showToast(result.error || 'Paiement non confirmé.', 'error');
           }
-          
-          const newCredits = (currentUser.songCredits || 0) + (pending.credits || 1);
-          const updatedUser = { ...currentUser, songCredits: newCredits };
-          await d1Database.saveUser(updatedUser);
-          // Use setCurrentUserLocally to avoid syncProfile overwriting credits
-          authRepository.setCurrentUserLocally({ songCredits: newCredits });
-          setUser(updatedUser);
-          localStorage.removeItem('sonorya_pending_purchase');
-          window.history.replaceState({}, document.title, window.location.pathname);
-          
-          console.log('[VERIFY CREDITS] Credits added successfully:', pending.credits, '-> Total:', newCredits);
-          
-          setTimeout(() => {
-            showToast(`🎉 Paiement réussi ! ${pending.credits} crédits ajoutés à votre compte.`, 'success');
-          }, 300);
         } catch (e) {
-          console.error('[PAYMENT VERIFY ERROR]', e);
+          console.error('[PAYMENT ERROR]', e);
           creditPaymentProcessedRef.current = false;
+          window.history.replaceState({}, document.title, window.location.pathname);
+          showToast('Erreur de vérification du paiement.', 'error');
         }
       };
       
-      processCredits();
-    } else if (paymentStatus === 'verify_song') {
+      // Attendre que l'utilisateur soit chargé avant de traiter
+      const currentUser = user || authRepository.getCurrentUser();
+      if (currentUser) {
+        processCredits();
+      }
+    } else if (paymentStatus === 'verify_song' && paymentId) {
+      // Pour les chansons, vérifier via le même endpoint puis restaurer le wizard
       setDashboardView('create');
       setAppView('dashboard');
+      
+      // Vérifier la transaction et récupérer les metadata (données du wizard)
+      if (!creditPaymentProcessedRef.current) {
+        creditPaymentProcessedRef.current = true;
+        
+        fetch('/api/moneroo/verify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ transactionId: paymentId })
+        })
+        .then(r => r.json())
+        .then(verifyData => {
+          const txStatus = String(verifyData.data?.status || verifyData.status || '').toLowerCase();
+          const metadata = verifyData.data?.metadata || {};
+          
+          console.log('[SONG PAYMENT] Verified:', txStatus, metadata);
+          
+          if (['failed', 'cancelled', 'canceled', 'expired', 'declined'].includes(txStatus)) {
+            showToast('Le paiement de la chanson a échoué.', 'error');
+            creditPaymentProcessedRef.current = false;
+          } else {
+            // Créditer les extraCredits si applicable
+            const extraCredits = parseInt(metadata.extraCredits, 10) || 0;
+            if (extraCredits > 0 && metadata.userId) {
+              fetch('/api/moneroo/credit', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ transactionId: paymentId })
+              }).catch(err => console.warn('[SONG EXTRA CREDITS] Error:', err));
+            }
+            
+            // Stocker les metadata dans l'état React pour restaurer le Wizard sans localStorage/sessionStorage
+            setRecoveredSongMetadata(metadata);
+          }
+          
+          window.history.replaceState({}, document.title, window.location.pathname);
+        })
+        .catch(err => {
+          console.error('[SONG PAYMENT VERIFY ERROR]', err);
+          creditPaymentProcessedRef.current = false;
+        });
+      }
+    } else if (paymentStatus === 'verify_song') {
+      // Pas de paymentId → juste naviguer vers le wizard
+      setDashboardView('create');
+      setAppView('dashboard');
+      window.history.replaceState({}, document.title, window.location.pathname);
     }
   }, [user]);
 
@@ -135,6 +182,7 @@ export const App: React.FC = () => {
 
   const [orderDraft, setOrderDraft] = useState<Partial<Song> | null>(null);
   const [dashboardView, setDashboardView] = useState<string>('home');
+  const [recoveredSongMetadata, setRecoveredSongMetadata] = useState<any>(null);
   const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showCreditModal, setShowCreditModal] = useState(false);
@@ -281,6 +329,8 @@ export const App: React.FC = () => {
           initialView={dashboardView}
           onBackToLanding={() => setAppView('landing')}
           onOpenRechargeCredits={() => setShowCreditModal(true)}
+          recoveredSongMetadata={recoveredSongMetadata}
+          onClearRecoveredMetadata={() => setRecoveredSongMetadata(null)}
         />
 
         {/* Credit Purchase Modal */}

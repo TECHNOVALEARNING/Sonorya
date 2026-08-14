@@ -94,24 +94,21 @@ export const CreditPurchaseModal: React.FC<CreditPurchaseModalProps> = ({
             last_name: 'Sonorya',
             phone: phone || user.phone || ''
           },
-          return_url: returnUrl
+          return_url: returnUrl,
+          metadata: {
+            type: 'credits',
+            userId: user.id,
+            credits: currentPlan.credits,
+            plan: currentPlan.id
+          }
         })
       });
 
       const data = await response.json();
       const checkoutUrl = data.data?.checkout_url || data.checkout_url;
-      const transactionId = data.data?.id || null;
 
       if (checkoutUrl) {
-        // Sauvegarder l'intention d'achat avec le transactionId AVANT de quitter le site
-        localStorage.setItem('sonorya_pending_purchase', JSON.stringify({
-          plan: currentPlan.id,
-          credits: currentPlan.credits,
-          userId: user.id,
-          monerooTransactionId: transactionId
-        }));
-        
-        // Redirection totale vers Moneroo
+        // Redirection directe vers Moneroo – rien en localStorage
         window.location.href = checkoutUrl;
       } else {
         console.error('[CREDIT PURCHASE] No checkout URL:', data);

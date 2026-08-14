@@ -21,6 +21,8 @@ interface SongWizardProps {
   user?: UserProfile | null;
   onUpdateUser?: (updated: Partial<UserProfile>) => void;
   onOpenRechargeCredits?: () => void;
+  recoveredSongMetadata?: any;
+  onClearRecoveredMetadata?: () => void;
 }
 
 export const SongWizard: React.FC<SongWizardProps> = ({
@@ -32,7 +34,9 @@ export const SongWizard: React.FC<SongWizardProps> = ({
   onDraftChange,
   user,
   onUpdateUser,
-  onOpenRechargeCredits
+  onOpenRechargeCredits,
+  recoveredSongMetadata,
+  onClearRecoveredMetadata
 }) => {
   const [activeTab, setActiveTab] = useState<'description' | 'lyrics'>('description');
   const [isCustomOpen, setIsCustomOpen] = useState(true);
@@ -60,98 +64,57 @@ export const SongWizard: React.FC<SongWizardProps> = ({
   const { t, lang } = useTranslation();
 
   // Intercepter le retour de paiement pour une chanson
+  // Les metadata viennent des props (issues de App.tsx après vérification Moneroo)
   const paymentProcessedRef = React.useRef(false);
   
   useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const paymentStatus = urlParams.get('payment_status');
-    
-    // Attendre que l'utilisateur soit chargé et ne traiter qu'une seule fois
-    if (paymentStatus !== 'verify_song' || !user || paymentProcessedRef.current) return;
-    
-    const pendingStr = localStorage.getItem('sonorya_pending_song');
-    if (!pendingStr) return;
+    // Ne traiter que s'il y a des metadata récupérées
+    if (!recoveredSongMetadata || !user || paymentProcessedRef.current) return;
     
     paymentProcessedRef.current = true;
     
-    const processSongPayment = async () => {
-      try {
-        const pending = JSON.parse(pendingStr);
-        
-        // Vérifier le paiement auprès de Moneroo avant de créditer
-        if (pending.monerooTransactionId) {
-          console.log('[VERIFY SONG] Verifying Moneroo transaction:', pending.monerooTransactionId);
-          try {
-            const verifyResponse = await fetch('/api/moneroo/verify', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ transactionId: pending.monerooTransactionId })
-            });
-            const verifyData = await verifyResponse.json();
-            const txStatus = String(verifyData.data?.status || verifyData.status || '').toLowerCase();
-            console.log('[VERIFY SONG] Moneroo status:', txStatus, verifyData);
-            
-            if (txStatus && ['failed', 'cancelled', 'canceled', 'expired', 'declined'].includes(txStatus)) {
-              paymentProcessedRef.current = false;
-              alert('Le paiement a échoué ou a été annulé (' + txStatus + ').');
-              window.history.replaceState({}, document.title, window.location.pathname);
-              return;
-            }
-          } catch (verifyError) {
-            console.warn('[VERIFY SONG] Moneroo verification error, proceeding to generation:', verifyError);
-          }
-        }
-        
-        // Créditer l'utilisateur s'il a pris un pack avec des crédits supplémentaires
-        if (pending.extraCredits > 0) {
-          const newCredits = (user.songCredits || 0) + pending.extraCredits;
-          const updatedUser = { ...user, songCredits: newCredits };
-          await d1Database.saveUser(updatedUser);
-          onUpdateUser?.(updatedUser);
-          console.log('[VERIFY SONG] Credits added:', pending.extraCredits, '-> Total:', newCredits);
-        }
+    try {
+      const metadata = recoveredSongMetadata;
+      
+      // Restaurer les valeurs dans le wizard depuis les metadata Moneroo
+      if (metadata.occasion) setOccasion(metadata.occasion as Occasion);
+      if (metadata.genre) setGenre(metadata.genre as MusicalStyle);
+      if (metadata.vibe) setVibe(metadata.vibe as SongVibe);
+      if (metadata.voiceGender) setVoiceGender(metadata.voiceGender as VoiceGender);
+      if (metadata.language) setLanguage(metadata.language as SongLanguage);
+      if (metadata.recipientName) setRecipientName(metadata.recipientName);
+      if (metadata.story) setStory(metadata.story);
+      if (metadata.customLyrics) setCustomLyrics(metadata.customLyrics);
+      if (metadata.isInstrumental === 'true') setIsInstrumental(true);
+      if (metadata.tempo) setTempo(metadata.tempo);
 
-        // Restaurer les valeurs dans le wizard pour générer la chanson
-        setOccasion(pending.occasion as Occasion);
-        setGenre(pending.genre as MusicalStyle);
-        setVibe(pending.vibe as SongVibe);
-        setVoiceGender(pending.voiceGender as VoiceGender);
-        setLanguage(pending.language as SongLanguage);
-        setRecipientName(pending.recipientName);
-        setStory(pending.story);
-        setCustomLyrics(pending.customLyrics);
-        setIsInstrumental(pending.isInstrumental);
-        setTempo(pending.tempo);
+      const paymentId = 'pay-' + Date.now();
+      const paymentRef = 'MNR-SONG-' + Date.now();
+      const payment: PaymentTransaction = {
+        id: paymentId,
+        userId: user.id,
+        songId: '',
+        reference: paymentRef,
+        provider: 'Moneroo' as MobilePaymentProvider,
+        amountFcfa: 0,
+        phoneNumber: user.phone || '',
+        status: 'successful',
+        createdAt: new Date().toISOString()
+      };
+      d1Database.savePayment(payment);
 
-        const paymentId = 'pay-' + Date.now();
-        const paymentRef = 'MNR-' + (pending.monerooTransactionId || Date.now());
-        const payment: PaymentTransaction = {
-          id: paymentId,
-          userId: user.id,
-          songId: '',
-          reference: paymentRef,
-          provider: 'Moneroo' as MobilePaymentProvider,
-          amountFcfa: pending.amount || 0,
-          phoneNumber: user.phone || '',
-          status: 'successful',
-          createdAt: new Date().toISOString()
-        };
-        await d1Database.savePayment(payment);
-
-        localStorage.removeItem('sonorya_pending_song');
-        window.history.replaceState({}, document.title, window.location.pathname);
-
-        // Passer directement à l'animation de génération IA !
-        setStep(7);
-        startGeneration(payment, paymentRef);
-      } catch (e) {
-        console.error('[SONG VERIFY ERROR]', e);
-        paymentProcessedRef.current = false;
+      if (onClearRecoveredMetadata) {
+        onClearRecoveredMetadata();
       }
-    };
-    
-    processSongPayment();
-  }, [user]);
+
+      // Passer directement à l'animation de génération IA !
+      setStep(7);
+      startGeneration(payment, paymentRef);
+    } catch (e) {
+      console.error('[SONG VERIFY ERROR]', e);
+      paymentProcessedRef.current = false;
+    }
+  }, [user, recoveredSongMetadata, onClearRecoveredMetadata]);
   const tBase = lang === 'FR' ? fr.wizard : en.wizard;
   const { getPrice } = usePricing();
   const catsBase = lang === 'FR' ? fr.categories : en.categories;
@@ -232,21 +195,21 @@ export const SongWizard: React.FC<SongWizardProps> = ({
     const { amount, currency, extraCredits, label } = getPlanDetails(selectedPlan);
 
     try {
-      // 1. Sauvegarde locale de la chanson en attente avant de quitter le site
-      const pendingSongParams = {
+      const songMetadata = {
+        type: 'song',
+        userId: user?.id || '',
         occasion: customOccasion || occasion,
         genre: customGenre || genre,
         vibe,
         voiceGender,
         language,
         recipientName,
-        story,
-        customLyrics,
-        isInstrumental,
+        story: story.substring(0, 500), // Limiter la taille pour les metadata Moneroo
+        customLyrics: customLyrics.substring(0, 1000),
+        isInstrumental: isInstrumental ? 'true' : 'false',
         tempo,
-        amount,
-        extraCredits,
-        userId: user?.id || 'user-current'
+        extraCredits: String(extraCredits),
+        plan: selectedPlan
       };
 
       const returnUrl = `${window.location.origin}/?payment_status=verify_song`;
@@ -264,7 +227,8 @@ export const SongWizard: React.FC<SongWizardProps> = ({
             last_name: 'Sonorya',
             phone: phone || user?.phone || ''
           },
-          return_url: returnUrl
+          return_url: returnUrl,
+          metadata: songMetadata
         })
       });
 
@@ -272,16 +236,9 @@ export const SongWizard: React.FC<SongWizardProps> = ({
       console.log('[MONEROO] Payment init result:', data);
 
       const checkoutUrl = data.data?.checkout_url || data.checkout_url;
-      const transactionId = data.data?.id || null;
 
       if (checkoutUrl) {
-        // Sauvegarder le transactionId Moneroo pour vérification au retour
-        localStorage.setItem('sonorya_pending_song', JSON.stringify({
-          ...pendingSongParams,
-          monerooTransactionId: transactionId
-        }));
-        
-        // Redirection totale vers Moneroo
+        // Redirection directe vers Moneroo – rien en localStorage
         window.location.href = checkoutUrl;
       } else {
         console.error('[MONEROO] No checkout URL received:', data);

@@ -32,12 +32,6 @@ export class AuthRepository {
     try {
       const { data, error } = await supabase.from('users').select('*').eq('id', userId).single();
       if (data && !error) {
-        // Preserve locally-set credits if Supabase returns 0 but we have credits in memory
-        // This prevents auth state changes from wiping credits before the DB save completes
-        const dbSongCredits = data.song_credits || 0;
-        const localSongCredits = this.currentUser?.songCredits || 0;
-        const finalSongCredits = dbSongCredits > 0 ? dbSongCredits : Math.max(dbSongCredits, localSongCredits);
-
         this.currentUser = {
           id: data.id,
           email: data.email,
@@ -48,7 +42,7 @@ export class AuthRepository {
           role: data.role as 'admin' | 'user',
           referralCode: data.referral_code,
           bonusCredits: data.bonus_credits || 0,
-          songCredits: finalSongCredits,
+          songCredits: data.song_credits || 0,
           createdAt: data.created_at,
           totalSongs: 0,
           status: data.status

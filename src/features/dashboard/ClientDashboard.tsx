@@ -23,6 +23,8 @@ interface ClientDashboardProps {
   initialView?: string;
   onBackToLanding?: () => void;
   onOpenRechargeCredits?: () => void;
+  recoveredSongMetadata?: any;
+  onClearRecoveredMetadata?: () => void;
 }
 
 export const ClientDashboard: React.FC<ClientDashboardProps> = ({ 
@@ -40,7 +42,9 @@ export const ClientDashboard: React.FC<ClientDashboardProps> = ({
   onUpdateUser,
   initialView = 'home',
   onBackToLanding,
-  onOpenRechargeCredits
+  onOpenRechargeCredits,
+  recoveredSongMetadata,
+  onClearRecoveredMetadata
 }) => {
   const [currentView, setCurrentView] = useState(initialView);
   const [draftInfo, setDraftInfo] = useState<{ title?: string; lyrics?: string; genre?: string }>({});
@@ -192,6 +196,8 @@ export const ClientDashboard: React.FC<ClientDashboardProps> = ({
                 setCurrentView('home');
               }}
               onDraftChange={setDraftInfo}
+              recoveredSongMetadata={recoveredSongMetadata}
+              onClearRecoveredMetadata={onClearRecoveredMetadata}
             />
           </main>
           <LyricsDisplayPanel
