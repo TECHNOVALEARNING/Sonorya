@@ -137,6 +137,9 @@ export const SongWizard: React.FC<SongWizardProps> = ({
     setIsProcessingPayment(true);
     const { amount, currency, extraCredits, label } = getPlanDetails(selectedPlan);
 
+    // Pré-ouvrir la fenêtre pour garantir l'affichage sans blocage du navigateur
+    const popup = window.open('about:blank', '_blank');
+
     try {
       const response = await fetch('/api/moneroo/initialize', {
         method: 'POST',
@@ -161,8 +164,10 @@ export const SongWizard: React.FC<SongWizardProps> = ({
       const monerooId = data.data?.id || data.id || 'moneroo-' + Date.now();
       const checkoutUrl = data.data?.checkout_url || data.checkout_url;
 
-      if (checkoutUrl) {
-        window.open(checkoutUrl, '_blank');
+      if (checkoutUrl && popup) {
+        popup.location.href = checkoutUrl;
+      } else if (popup) {
+        popup.close();
       }
 
       // Add extra credits to user profile if purchasing a multi-song pack

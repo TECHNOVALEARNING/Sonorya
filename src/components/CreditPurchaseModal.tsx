@@ -78,6 +78,9 @@ export const CreditPurchaseModal: React.FC<CreditPurchaseModalProps> = ({
 
     setIsProcessing(true);
 
+    // Pré-ouvrir la fenêtre pour éviter le blocage des pop-ups par le navigateur
+    const popup = window.open('about:blank', '_blank');
+
     try {
       const response = await fetch('/api/moneroo/initialize', {
         method: 'POST',
@@ -99,8 +102,10 @@ export const CreditPurchaseModal: React.FC<CreditPurchaseModalProps> = ({
       const data = await response.json();
       const checkoutUrl = data.data?.checkout_url || data.checkout_url;
 
-      if (checkoutUrl) {
-        window.open(checkoutUrl, '_blank');
+      if (checkoutUrl && popup) {
+        popup.location.href = checkoutUrl;
+      } else if (popup) {
+        popup.close();
       }
 
       // Save payment
