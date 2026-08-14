@@ -65,7 +65,24 @@ export default async function handler(req, res) {
     }
 
     // 4. Mettre à jour les crédits dans Supabase
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    // Extract token to act on behalf of the user to pass RLS policies
+    const authHeader = req.headers.authorization || '';
+    const token = authHeader.replace('Bearer ', '').trim();
+    
+    let supabase;
+    if (token && !supabaseServiceKey) {
+      // Create client with user's JWT token
+      supabase = createClient(supabaseUrl, process.env.VITE_SUPABASE_ANON_KEY || '', {
+        global: {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        }
+      });
+    } else {
+      // Fallback to service key if available
+      supabase = createClient(supabaseUrl, supabaseServiceKey || process.env.VITE_SUPABASE_ANON_KEY || '');
+    }
 
     // Lire les crédits actuels
     const { data: userData, error: readError } = await supabase

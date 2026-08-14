@@ -29,6 +29,7 @@ import { useToast } from './components/ToastProvider';
 import { useTranslation } from './i18n/LanguageContext';
 import { d1Database } from './services/d1Service';
 import { AnimatedBackground } from './components/AnimatedBackground';
+import { supabase } from './services/supabaseClient';
 
 type LandingView = 'home' | 'contact' | 'terms' | 'privacy';
 
@@ -49,7 +50,7 @@ export const App: React.FC = () => {
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const paymentStatus = urlParams.get('payment_status');
-    const paymentId = urlParams.get('paymentId') || urlParams.get('payment_id');
+    const paymentId = urlParams.get('paymentId') || urlParams.get('payment_id') || urlParams.get('transaction_id');
     
     if (!paymentStatus) return;
     
@@ -58,22 +59,26 @@ export const App: React.FC = () => {
     
     // Traitement des achats de crédits
     if (paymentStatus === 'verify' && !creditPaymentProcessedRef.current) {
-      if (!paymentId) {
-        console.warn('[PAYMENT] No paymentId in URL, cannot verify');
-        window.history.replaceState({}, document.title, window.location.pathname);
-        return;
-      }
-      
-      creditPaymentProcessedRef.current = true;
-      
       const processCredits = async () => {
+        if (!paymentId) {
+          console.warn('[PAYMENT] No paymentId in URL, cannot verify.');
+          return;
+        }
+
         try {
           console.log('[PAYMENT] Verifying & crediting via server. PaymentId:', paymentId);
           
+          // Récupérer le token Supabase de l'utilisateur connecté pour passer les politiques RLS
+          const sessionData = await supabase.auth.getSession();
+          const token = sessionData.data.session?.access_token || '';
+
           // Appel au endpoint sécurisé côté serveur
           const response = await fetch('/api/moneroo/credit', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}` 
+            },
             body: JSON.stringify({ transactionId: paymentId })
           });
           
@@ -100,7 +105,7 @@ export const App: React.FC = () => {
             showToast(result.error || 'Paiement non confirmé.', 'error');
           }
         } catch (e) {
-          console.error('[PAYMENT ERROR]', e);
+          console.error('[PAYMENT] Erreur vérification crédits:', e);
           creditPaymentProcessedRef.current = false;
           window.history.replaceState({}, document.title, window.location.pathname);
           showToast('Erreur de vérification du paiement.', 'error');
@@ -140,11 +145,17 @@ export const App: React.FC = () => {
             // Créditer les extraCredits si applicable
             const extraCredits = parseInt(metadata.extraCredits, 10) || 0;
             if (extraCredits > 0 && metadata.userId) {
-              fetch('/api/moneroo/credit', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ transactionId: paymentId })
-              }).catch(err => console.warn('[SONG EXTRA CREDITS] Error:', err));
+              supabase.auth.getSession().then((sessionData) => {
+                const token = sessionData.data.session?.access_token || '';
+                fetch('/api/moneroo/credit', {
+                  method: 'POST',
+                  headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                  },
+                  body: JSON.stringify({ transactionId: paymentId })
+                }).catch(err => console.warn('[SONG EXTRA CREDITS] Error:', err));
+              });
             }
             
             // Stocker les metadata dans l'état React pour restaurer le Wizard sans localStorage/sessionStorage
