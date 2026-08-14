@@ -64,75 +64,9 @@ The lyrics must be highly emotional, personal, and well-structured with at least
       console.info('[LYRICS] AI generation notice:', e);
     }
 
-    // Fallback: high-quality personalized template lyrics
-    console.log('[LYRICS] Using personalized fallback template');
-    const isFrench = lang === 'Français' || lang === 'Fon' || lang === 'Lingala' || lang === 'Wolof';
-
-    if (isFrench) {
-      return `[Verse 1]
-${name}, aujourd'hui la vie célèbre ton nom
-Nos cœurs s'accordent tous sur le même diapason
-${story}
-Dans chaque sourire se cache une nouvelle chanson
-
-[Chorus]
-${name}, oh ${name}, c'est ton moment d'éclat
-Pour ton ${params.occasion}, le monde entier s'ouvre à toi
-Laisse la magie opérer, laisse-toi porter par nos voix
-${name}, tu mérites l'amour qui coule sous ce toit
-
-[Verse 2]
-Les souvenirs que l'on tisse ne s'effaceront jamais
-Même les tempêtes lointaines se sont mises à chanter
-C'est ta présence unique qui vient tout illuminer
-Une étincelle précieuse que rien ne peut remplacer
-
-[Bridge]
-Quand le rythme s'accélère et que la nuit descend
-On gardera cette mélodie à travers l'océan
-Que le meilleur reste à venir, à partir de maintenant
-
-[Chorus]
-${name}, oh ${name}, c'est ton moment d'éclat
-Pour ton ${params.occasion}, le monde entier s'ouvre à toi
-Laisse la magie opérer, laisse-toi porter par nos voix
-${name}, tu mérites l'amour qui coule sous ce toit
-
-[Outro]
-Cette chanson est pour toi...
-Garde-la précieusement, ${name}...
-Aujourd'hui, demain, et pour toujours...`;
-    }
-
-    return `[Verse 1]
-${name}, today the world celebrates your light
-Every moment we share shines incredibly bright
-${story}
-Together we stand on this beautiful night
-
-[Chorus]
-${name}, ${name}, we sing this song for you
-For your ${params.occasion}, may all your dreams come true
-The rhythm of ${params.genre} beats within our hearts
-${name}, you deserve the very best from the start
-
-[Verse 2]
-From every corner of the world they came to say
-That you light up the room in your own special way
-Your loved ones gather here to lift you high
-A celebration under the open sky
-
-[Bridge]
-Oh ${name}, receive this hymn of love
-These words forever etched in melodies above
-
-[Chorus]
-${name}, ${name}, we sing this song for you
-For your ${params.occasion}, may all your dreams come true
-The rhythm of ${params.genre} beats within our hearts
-${name}, you deserve the very best from the start
-
-[Outro]
-${name}... in music, forever and always`;
+    // Fallback: If AI fails, we delegate the lyrics generation to Kie API natively
+    console.log('[LYRICS] Using Kie API native lyrics generation fallback');
+    const autoPrompt = `Une chanson pour ${name}. ${story}. Style: ${params.genre}. Ambiance: ${params.vibe}.`;
+    return `[KIE_AUTO] ${autoPrompt.substring(0, 150)}`;
   }
 }

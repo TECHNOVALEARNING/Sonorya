@@ -6,6 +6,7 @@ export interface KieMusicGenerationResult {
   coverUrl: string;
   tempo: number;
   durationSeconds: number;
+  lyrics?: string;
 }
 
 export const KIE_API_KEY = ((import.meta as any).env && (import.meta as any).env.VITE_KIE_API_KEY) ||
@@ -68,7 +69,8 @@ export class KieService {
             previewAudioUrl: data.preview_url || audioUrl,
             coverUrl: imageUrl || data.image_url || data.imageUrl || dynamicAiCoverUrl,
             tempo: params.tempo,
-            durationSeconds: data.duration || 180
+            durationSeconds: data.duration || 180,
+            lyrics: data.lyrics
           };
         }
         throw new Error('No audio URL found in response');

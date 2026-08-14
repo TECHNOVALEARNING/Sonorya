@@ -332,7 +332,7 @@ export const SongWizard: React.FC<SongWizardProps> = ({
           vibe,
           tempo,
           durationSeconds: musicResult.durationSeconds || 180,
-          lyrics,
+          lyrics: musicResult.lyrics || lyrics,
           audioUrl: musicResult.audioUrl,
           previewAudioUrl: musicResult.previewAudioUrl,
           coverUrl: musicResult.coverUrl,

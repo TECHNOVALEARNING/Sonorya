@@ -32,6 +32,15 @@ export default defineConfig({
 
               // ── Step 1: Generate (async task) ──
               console.log('[KIE.AI] Sending generate request...');
+              
+              let customMode = true;
+              let promptText = (parsed.lyrics || parsed.prompt || '[Verse]\nLa la la melodie').substring(0, 3000);
+
+              if (promptText.startsWith('[KIE_AUTO]')) {
+                customMode = false;
+                promptText = promptText.replace('[KIE_AUTO]', '').trim().substring(0, 200);
+              }
+
               const generateRes = await fetch('https://api.kie.ai/api/v1/generate', {
                 method: 'POST',
                 headers: {
@@ -39,9 +48,9 @@ export default defineConfig({
                   'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                  customMode: true,
+                  customMode: customMode,
                   instrumental: false,
-                  prompt: (parsed.lyrics || parsed.prompt || '[Verse]\nLa la la melodie').substring(0, 3000),
+                  prompt: promptText,
                   style: `${parsed.genre || 'Afrobeat'}, ${parsed.voiceGender === 'Féminine' ? 'female vocals' : parsed.voiceGender === 'Masculine' ? 'male vocals' : 'male and female duet vocals'}, melodic, upbeat, african`,
                   title: (parsed.title || 'Chanson Sonorya').substring(0, 80),
                   model: 'V4',
@@ -79,9 +88,7 @@ export default defineConfig({
               const checkAudioUrl = (obj: any, depth = 0): string | null => {
                 if (!obj || depth > 6) return null;
                 
-                // Direct string URL check (relaxed: any http URL is a candidate)
                 if (typeof obj === 'string' && (obj.startsWith('http://') || obj.startsWith('https://'))) {
-                  // Accept any URL that looks like an audio file
                   if (obj.includes('.mp3') || obj.includes('.wav') || obj.includes('.m4a') || 
                       obj.includes('.ogg') || obj.includes('.flac') || obj.includes('.aac') ||
                       obj.includes('/audio') || obj.includes('cdn') || obj.includes('storage')) {
@@ -91,7 +98,6 @@ export default defineConfig({
 
                 if (typeof obj !== 'object') return null;
 
-                // Check all known audio URL field names  
                 const audioFields = [
                   'audio_url', 'audioUrl', 'audioWavUrl', 'audio_download_url',
                   'mp3_url', 'mp3Url', 'song_url', 'songUrl', 'music_url', 'musicUrl',
@@ -108,7 +114,6 @@ export default defineConfig({
                   }
                 }
 
-                // Check sunoData structure
                 if (obj.sunoData && Array.isArray(obj.sunoData) && obj.sunoData.length > 0) {
                   for (const item of obj.sunoData) {
                     const url = checkAudioUrl(item, depth + 1);
@@ -116,7 +121,6 @@ export default defineConfig({
                   }
                 }
 
-                // Check arrays
                 if (Array.isArray(obj)) {
                   for (const item of obj) {
                     const url = checkAudioUrl(item, depth + 1);
@@ -124,7 +128,6 @@ export default defineConfig({
                   }
                 }
 
-                // Recurse into known nested objects
                 const nestedFields = ['data', 'response', 'result', 'output', 'record', 'task', 'item', 'items', 'tracks'];
                 for (const field of nestedFields) {
                   if (obj[field]) {
@@ -136,7 +139,6 @@ export default defineConfig({
                 return null;
               };
 
-              // Also extract image URL
               const checkImageUrl = (obj: any, depth = 0): string | null => {
                 if (!obj || depth > 6) return null;
                 if (typeof obj !== 'object') return null;
@@ -159,12 +161,31 @@ export default defineConfig({
                 return null;
               };
 
+              const checkLyrics = (obj: any, depth = 0): string | null => {
+                if (!obj || depth > 6) return null;
+                if (typeof obj !== 'object') return null;
+
+                if (obj.prompt && typeof obj.prompt === 'string' && obj.prompt.includes('[')) return obj.prompt;
+                if (obj.lyrics && typeof obj.lyrics === 'string' && obj.lyrics.includes('[')) return obj.lyrics;
+                
+                if (obj.sunoData && Array.isArray(obj.sunoData) && obj.sunoData.length > 0) {
+                  for (const item of obj.sunoData) {
+                    const l = checkLyrics(item, depth + 1);
+                    if (l) return l;
+                  }
+                }
+                if (obj.data) return checkLyrics(obj.data, depth + 1);
+                if (obj.response) return checkLyrics(obj.response, depth + 1);
+                return null;
+              };
+
               const immediateUrl = checkAudioUrl(generateData);
               if (immediateUrl) {
                 const imageUrl = checkImageUrl(generateData);
+                const generatedLyrics = checkLyrics(generateData);
                 console.log('[KIE.AI] Got immediate audio URL:', immediateUrl);
                 res.setHeader('Content-Type', 'application/json');
-                res.end(JSON.stringify({ audio_url: immediateUrl, image_url: imageUrl }));
+                res.end(JSON.stringify({ audio_url: immediateUrl, image_url: imageUrl, lyrics: generatedLyrics }));
                 return;
               }
 
@@ -177,12 +198,10 @@ export default defineConfig({
 
               console.log('[KIE.AI] Task IDs:', taskIds);
 
-              // ── Step 2: Poll for completion ──
-              // kie.ai docs: GET /api/v1/generate/record-info?taskId=xxx
               const taskId = taskIds[0];
 
               for (let attempt = 0; attempt < 60; attempt++) {
-                await new Promise(r => setTimeout(r, 5000)); // 5s between polls
+                await new Promise(r => setTimeout(r, 5000));
                 console.log(`[KIE.AI] Polling attempt ${attempt + 1}/60 for task ${taskId}...`);
 
                 try {
@@ -199,22 +218,17 @@ export default defineConfig({
 
                   if (pollRes.ok) {
                     const pollData = await pollRes.json();
-                    // Log full response for debugging (up to 2000 chars)
-                    console.log(`[KIE.AI] Poll response (full):`, JSON.stringify(pollData).substring(0, 2000));
-
                     const audioUrl = checkAudioUrl(pollData);
                     if (audioUrl) {
                       const imageUrl = checkImageUrl(pollData);
+                      const generatedLyrics = checkLyrics(pollData);
                       console.log('[KIE.AI] ✅ Got audio URL:', audioUrl);
-                      console.log('[KIE.AI] 🖼️ Got image URL:', imageUrl);
                       res.setHeader('Content-Type', 'application/json');
-                      res.end(JSON.stringify({ audio_url: audioUrl, image_url: imageUrl }));
+                      res.end(JSON.stringify({ audio_url: audioUrl, image_url: imageUrl, lyrics: generatedLyrics }));
                       return;
                     }
 
-                    // Check status field
                     const status = pollData.status || pollData.data?.status || '';
-                    console.log(`[KIE.AI] Task status: "${status}"`);
                     if (typeof status === 'string' && (
                       status.toUpperCase() === 'FAILED' ||
                       status.toUpperCase() === 'ERROR'
@@ -230,7 +244,6 @@ export default defineConfig({
                 }
               }
 
-              // If we get here, polling timed out
               console.warn('[KIE.AI] Polling timed out after 5 minutes');
               res.setHeader('Content-Type', 'application/json');
               res.end(JSON.stringify({ error: 'Generation timed out', taskId }));

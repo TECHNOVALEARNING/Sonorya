@@ -8,6 +8,15 @@ export default async function handler(req, res) {
     const apiKey = process.env.VITE_MUSIC_API_KEY || process.env.KIE_API_KEY || 'ce70092505bf96765228786f7116f9a4';
 
     console.log('[KIE.AI VERCEL] Sending generate request...');
+    
+    let customMode = true;
+    let promptText = (parsed.lyrics || parsed.prompt || '[Verse]\nLa la la melodie').substring(0, 3000);
+
+    if (promptText.startsWith('[KIE_AUTO]')) {
+      customMode = false;
+      promptText = promptText.replace('[KIE_AUTO]', '').trim().substring(0, 200);
+    }
+
     const generateRes = await fetch('https://api.kie.ai/api/v1/generate', {
       method: 'POST',
       headers: {
@@ -15,9 +24,9 @@ export default async function handler(req, res) {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        customMode: true,
+        customMode: customMode,
         instrumental: false,
-        prompt: (parsed.lyrics || parsed.prompt || '[Verse]\nLa la la melodie').substring(0, 3000),
+        prompt: promptText,
         style: `${parsed.genre || 'Afrobeat'}, ${parsed.voiceGender === 'Féminine' ? 'female vocals' : parsed.voiceGender === 'Masculine' ? 'male vocals' : 'male and female duet vocals'}, melodic, upbeat, african`,
         title: (parsed.title || 'Chanson Sonorya').substring(0, 80),
         model: 'V4',
@@ -120,39 +129,75 @@ export default async function handler(req, res) {
       return null;
     };
 
+    const checkLyrics = (obj, depth = 0) => {
+      if (!obj || depth > 6) return null;
+      if (typeof obj !== 'object') return null;
+
+      if (obj.prompt && typeof obj.prompt === 'string' && obj.prompt.includes('[')) return obj.prompt;
+      if (obj.lyrics && typeof obj.lyrics === 'string' && obj.lyrics.includes('[')) return obj.lyrics;
+      
+      if (obj.sunoData && Array.isArray(obj.sunoData) && obj.sunoData.length > 0) {
+        for (const item of obj.sunoData) {
+          const l = checkLyrics(item, depth + 1);
+          if (l) return l;
+        }
+      }
+      if (obj.data) return checkLyrics(obj.data, depth + 1);
+      if (obj.response) return checkLyrics(obj.response, depth + 1);
+      return null;
+    };
+
     const immediateUrl = checkAudioUrl(generateData);
     if (immediateUrl) {
       const imageUrl = checkImageUrl(generateData);
-      return res.status(200).json({ audio_url: immediateUrl, image_url: imageUrl });
+      const generatedLyrics = checkLyrics(generateData);
+      console.log('[KIE.AI VERCEL] Got immediate audio URL:', immediateUrl);
+      return res.status(200).json({ audio_url: immediateUrl, image_url: imageUrl, lyrics: generatedLyrics });
     }
 
     if (taskIds.length === 0) {
-      return res.status(400).json({ error: 'No task ID returned', raw: generateData });
+      console.error('[KIE.AI VERCEL] No task IDs found in response');
+      return res.status(500).json({ error: 'No task ID returned', raw: generateData });
     }
 
+    console.log('[KIE.AI VERCEL] Task IDs:', taskIds);
+
+    // ── Step 2: Poll for completion ──
     const taskId = taskIds[0];
+
     for (let attempt = 0; attempt < 60; attempt++) {
-      await new Promise(r => setTimeout(r, 4000));
+      await new Promise(r => setTimeout(r, 5000));
+      console.log(`[KIE.AI VERCEL] Polling attempt ${attempt + 1}/60 for task ${taskId}...`);
+
       try {
         const pollRes = await fetch(
           `https://api.kie.ai/api/v1/generate/record-info?taskId=${taskId}`,
           {
+            method: 'GET',
             headers: {
               'Authorization': `Bearer ${apiKey}`,
               'Content-Type': 'application/json'
             }
           }
         );
+
         if (pollRes.ok) {
           const pollData = await pollRes.json();
-          console.log('[KIE.AI VERCEL] Poll response:', JSON.stringify(pollData).substring(0, 2000));
+          
           const audioUrl = checkAudioUrl(pollData);
           if (audioUrl) {
             const imageUrl = checkImageUrl(pollData);
-            return res.status(200).json({ audio_url: audioUrl, image_url: imageUrl });
+            const generatedLyrics = checkLyrics(pollData);
+            console.log('[KIE.AI VERCEL] ✅ Got audio URL:', audioUrl);
+            return res.status(200).json({ audio_url: audioUrl, image_url: imageUrl, lyrics: generatedLyrics });
           }
+
           const status = pollData.status || pollData.data?.status || '';
-          if (typeof status === 'string' && (status.toUpperCase() === 'FAILED' || status.toUpperCase() === 'ERROR')) {
+          if (typeof status === 'string' && (
+            status.toUpperCase() === 'FAILED' ||
+            status.toUpperCase() === 'ERROR'
+          )) {
+            console.error('[KIE.AI VERCEL] Task failed:', pollData);
             break;
           }
         }
@@ -161,6 +206,7 @@ export default async function handler(req, res) {
       }
     }
 
+    console.warn('[KIE.AI VERCEL] Polling timed out after 5 minutes');
     return res.status(200).json({ error: 'Generation timed out', taskId });
   } catch (err) {
     console.error('[KIE.AI VERCEL] Handler error:', err);
