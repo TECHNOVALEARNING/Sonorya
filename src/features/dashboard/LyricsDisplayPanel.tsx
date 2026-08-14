@@ -163,7 +163,6 @@ export const LyricsDisplayPanel: React.FC<LyricsDisplayPanelProps> = ({
           overflowY: 'auto',
           position: 'relative',
           zIndex: 1,
-          paddingBottom: currentSong ? 100 : 20,
           paddingRight: 6,
           display: 'flex',
           flexDirection: 'column',
@@ -226,6 +225,7 @@ export const LyricsDisplayPanel: React.FC<LyricsDisplayPanelProps> = ({
                 </div>
               );
             })}
+            <div style={{ height: currentSong ? 140 : 40, width: '100%', flexShrink: 0 }} />
           </div>
         ) : (
           <div

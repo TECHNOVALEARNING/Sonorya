@@ -119,53 +119,28 @@ export const DashboardPlayer: React.FC<PlayerProps> = ({
           }
         };
 
-        const playFallback = () => {
+        const handleError = () => {
           if (audioRef.current) audioRef.current.pause();
-          audioSynth.playTrack(
-            currentSong.genre,
-            effectiveDuration,
-            currentSong.lyrics,
-            currentSong.language || 'Français',
-            currentSong.voiceGender || 'Duo / Mixte',
-            (pct) => {
-              setProgress(pct);
-              const curTime = (pct / 100) * effectiveDuration;
-              setElapsed(formatTime(curTime));
-              if (onTimeUpdate) onTimeUpdate(curTime, effectiveDuration);
-            },
-            onNext
-          );
+          onTogglePlay(); // Revenir à l'état pause dans l'UI
+          showToast("Erreur de lecture : le fichier audio n'est pas encore prêt ou est indisponible.", "error");
         };
 
         audioRef.current.onerror = () => {
-          playFallback();
+          handleError();
         };
 
         if (audioRef.current.paused) {
           audioRef.current.play().catch(() => {
-            playFallback();
+            handleError();
           });
         }
       } else {
         if (audioRef.current) audioRef.current.pause();
-        audioSynth.playTrack(
-          currentSong.genre,
-          effectiveDuration,
-          currentSong.lyrics,
-          currentSong.language || 'Français',
-          currentSong.voiceGender || 'Duo / Mixte',
-          (pct) => {
-            setProgress(pct);
-            const curTime = (pct / 100) * effectiveDuration;
-            setElapsed(formatTime(curTime));
-            if (onTimeUpdate) onTimeUpdate(curTime, effectiveDuration);
-          },
-          onNext
-        );
+        onTogglePlay();
+        showToast("Aucun fichier audio valide associé à cette chanson.", "error");
       }
     } else {
       if (audioRef.current) audioRef.current.pause();
-      audioSynth.stop();
     }
 
     return () => {
