@@ -76,7 +76,7 @@ export const LyricsDisplayPanel: React.FC<LyricsDisplayPanelProps> = ({
         flexDirection: 'column',
         position: 'relative',
         overflow: 'hidden',
-        padding: `24px 24px ${currentSong ? 100 : 28}px`,
+        padding: '24px 24px 28px',
         height: '100vh',
         minHeight: '100vh',
         maxHeight: '100vh',

@@ -1771,12 +1771,13 @@ footer a:hover {
   position: fixed;
   bottom: 0;
   left: 240px;
-  right: 0;
+  right: 360px;
   height: 72px;
   background: linear-gradient(180deg, rgba(20, 24, 36, 0.98) 0%, rgba(14, 17, 26, 0.99) 100%);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-right: 1px solid rgba(255, 255, 255, 0.06);
   box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.5);
   display: flex;
   align-items: center;
