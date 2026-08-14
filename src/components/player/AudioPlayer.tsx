@@ -29,31 +29,62 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
   const [showFullPlayer, setShowFullPlayer] = useState(false);
   const [showLyrics, setShowLyrics] = useState(false);
 
-  // Trigger real Web Audio synthesis whenever song or isPlaying changes!
+  const audioRef = React.useRef<HTMLAudioElement | null>(null);
+
   useEffect(() => {
     if (!currentSong) return;
 
-    if (isPlaying) {
-      audioSynth.playTrack(
-        currentSong.genre,
-        currentSong.durationSeconds || 180,
-        (pct) => setProgress(pct),
-        () => {
-          if (isRepeat) {
-            audioSynth.playTrack(currentSong.genre, currentSong.durationSeconds || 180);
-          } else {
-            onNext();
-          }
+    if (!audioRef.current) {
+      audioRef.current = new Audio();
+      
+      audioRef.current.addEventListener('timeupdate', () => {
+        if (audioRef.current && audioRef.current.duration) {
+          setProgress((audioRef.current.currentTime / audioRef.current.duration) * 100);
         }
-      );
+      });
+      
+      audioRef.current.addEventListener('ended', () => {
+        if (isRepeat) {
+          if (audioRef.current) {
+            audioRef.current.currentTime = 0;
+            audioRef.current.play().catch(console.warn);
+          }
+        } else {
+          onNext();
+        }
+      });
+    }
+
+    const audio = audioRef.current;
+    
+    // Si la chanson a changé, mettre à jour la source
+    const audioUrl = currentSong.audioUrl || currentSong.previewAudioUrl;
+    if (audioUrl && audio.src !== audioUrl) {
+      audio.src = audioUrl;
+      audio.load();
+    }
+
+    if (isPlaying) {
+      audio.playbackRate = speed;
+      audio.play().catch((e) => console.warn('Erreur lecture audio:', e));
     } else {
-      audioSynth.stop();
+      audio.pause();
     }
 
     return () => {
-      audioSynth.stop();
+      // Cleanup happens only on unmount or full stop
     };
-  }, [currentSong?.id, isPlaying]);
+  }, [currentSong?.id, isPlaying, isRepeat, speed]);
+
+  // Clean up audio on unmount completely
+  useEffect(() => {
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+    };
+  }, []);
 
   if (!currentSong) return null;
 

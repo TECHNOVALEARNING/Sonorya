@@ -163,12 +163,12 @@ export const LyricsDisplayPanel: React.FC<LyricsDisplayPanelProps> = ({
           overflowY: 'auto',
           position: 'relative',
           zIndex: 1,
+          paddingBottom: currentSong ? 100 : 20,
           paddingRight: 6,
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'flex-start',
-          paddingTop: 8,
-          paddingBottom: 20
+          paddingTop: 8
         }}
       >
         {hasLyrics ? (
