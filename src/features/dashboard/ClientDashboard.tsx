@@ -95,14 +95,85 @@ export const ClientDashboard: React.FC<ClientDashboardProps> = ({
     onOpenCreate();
   };
 
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
   return (
-    <div className="client-dashboard-layout" style={{ height: '100vh', maxHeight: '100vh', overflow: 'hidden' }}>
+    <div className="client-dashboard-layout">
+      {/* MOBILE TOP HEADER */}
+      <header className="mobile-dashboard-header">
+        <div 
+          style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}
+          onClick={() => {
+            if (onBackToLanding) onBackToLanding();
+            else setCurrentView('home');
+          }}
+        >
+          <img src="/images/sonorya-app-logo.png" alt="Sonorya Logo" style={{ width: 24, height: 24, borderRadius: 6, objectFit: 'cover' }} />
+          <span style={{ fontFamily: 'Fraunces, serif', fontSize: 18, fontWeight: 700, color: 'var(--ivory)' }}>
+            Sonorya<span style={{ color: 'var(--coral)' }}>.</span>
+          </span>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          {/* User Credits Pill */}
+          <button 
+            onClick={onOpenRechargeCredits}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              background: 'rgba(212, 161, 57, 0.12)',
+              border: '1px solid rgba(212, 161, 57, 0.3)',
+              borderRadius: 99,
+              padding: '4px 10px',
+              color: 'var(--gold)',
+              fontSize: 12,
+              fontWeight: 700,
+              cursor: 'pointer'
+            }}
+          >
+            <span>⚡ {(user?.songCredits || 0) + (user?.bonusCredits || 0)}</span>
+            <span style={{ fontSize: 10, background: 'var(--gold)', color: '#120A1E', borderRadius: '50%', width: 14, height: 14, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>+</span>
+          </button>
+
+          {/* Hamburger Menu Button */}
+          <button 
+            className="mobile-menu-trigger-btn"
+            onClick={() => setIsMobileMenuOpen(true)}
+            aria-label="Ouvrir le menu"
+            style={{
+              background: 'rgba(255, 255, 255, 0.06)',
+              border: '1px solid rgba(255, 255, 255, 0.1)',
+              borderRadius: 8,
+              padding: '7px 9px',
+              color: 'var(--ivory)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer'
+            }}
+          >
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4, width: 18 }}>
+              <span style={{ display: 'block', height: 2, background: 'var(--ivory)', borderRadius: 2 }} />
+              <span style={{ display: 'block', height: 2, background: 'var(--ivory)', borderRadius: 2 }} />
+              <span style={{ display: 'block', height: 2, background: 'var(--ivory)', borderRadius: 2 }} />
+            </div>
+          </button>
+        </div>
+      </header>
+
+      {/* SIDEBAR (Desktop sidebar + Mobile Drawer) */}
       <DashboardSidebar 
         currentView={currentView} 
-        onNavigate={setCurrentView} 
+        onNavigate={(view) => {
+          setCurrentView(view);
+          setIsMobileMenuOpen(false);
+        }} 
         onLogout={onLogout} 
         onOpenCreate={handleCreateTrigger}
         onBackToLanding={onBackToLanding}
+        isOpen={isMobileMenuOpen}
+        onClose={() => setIsMobileMenuOpen(false)}
       />
       
       {currentView === 'create' ? (

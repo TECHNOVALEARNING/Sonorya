@@ -110,11 +110,9 @@ export const SongWizard: React.FC<SongWizardProps> = ({
             localStorage.removeItem('sonorya_pending_song');
             window.history.replaceState({}, document.title, window.location.pathname);
 
-            // Passer directement à l'étape finale et lancer la génération !
-            setStep(3);
-            setTimeout(() => {
-              startGeneration(payment, paymentRef);
-            }, 500);
+            // Passer directement à l'animation de génération IA !
+            setStep(7);
+            startGeneration(payment, paymentRef);
           }
         } catch (e) {
           console.error('[SONG VERIFY ERROR]', e);
@@ -251,7 +249,7 @@ export const SongWizard: React.FC<SongWizardProps> = ({
     } catch (err) {
       console.error('[MONEROO ERROR]', err);
       setIsProcessingPayment(false);
-      alert(tBase.error || 'Erreur lors du paiement.');
+      alert('Erreur lors de l\'initialisation du paiement.');
     }
   };
 
