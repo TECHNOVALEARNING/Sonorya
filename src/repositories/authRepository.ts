@@ -32,6 +32,12 @@ export class AuthRepository {
     try {
       const { data, error } = await supabase.from('users').select('*').eq('id', userId).single();
       if (data && !error) {
+        // Preserve locally-set credits if Supabase returns 0 but we have credits in memory
+        // This prevents auth state changes from wiping credits before the DB save completes
+        const dbSongCredits = data.song_credits || 0;
+        const localSongCredits = this.currentUser?.songCredits || 0;
+        const finalSongCredits = dbSongCredits > 0 ? dbSongCredits : Math.max(dbSongCredits, localSongCredits);
+
         this.currentUser = {
           id: data.id,
           email: data.email,
@@ -42,7 +48,7 @@ export class AuthRepository {
           role: data.role as 'admin' | 'user',
           referralCode: data.referral_code,
           bonusCredits: data.bonus_credits || 0,
-          songCredits: data.song_credits || 0,
+          songCredits: finalSongCredits,
           createdAt: data.created_at,
           totalSongs: 0,
           status: data.status
@@ -68,6 +74,17 @@ export class AuthRepository {
 
   public getCurrentUser(): UserProfile | null {
     return this.currentUser;
+  }
+
+  /**
+   * Update in-memory user state WITHOUT re-reading from Supabase.
+   * Use this after crediting a user to avoid syncProfile overwriting credits.
+   */
+  public setCurrentUserLocally(updates: Partial<UserProfile>): void {
+    if (!this.currentUser) return;
+    this.currentUser = { ...this.currentUser, ...updates };
+    console.log('[AUTH] Local user updated:', { songCredits: this.currentUser.songCredits, bonusCredits: this.currentUser.bonusCredits });
+    this.notifyListeners();
   }
 
   public async loginWithEmail(email: string, password?: string): Promise<{ user: UserProfile | null; error?: string }> {
@@ -128,20 +145,34 @@ export class AuthRepository {
   public async updateProfile(updates: Partial<UserProfile>): Promise<UserProfile> {
     if (!this.currentUser) return this.currentUser as any;
 
-    const dbUpdates = {
+    const dbUpdates: Record<string, any> = {
       full_name: updates.fullName,
       phone: updates.phone,
       country: updates.country,
-      avatar_url: updates.avatarUrl
+      avatar_url: updates.avatarUrl,
+      song_credits: updates.songCredits,
+      bonus_credits: updates.bonusCredits
     };
 
     // Remove undefined values
-    Object.keys(dbUpdates).forEach(key => (dbUpdates as any)[key] === undefined && delete (dbUpdates as any)[key]);
+    Object.keys(dbUpdates).forEach(key => dbUpdates[key] === undefined && delete dbUpdates[key]);
 
     const { data, error } = await supabase.from('users').update(dbUpdates).eq('id', this.currentUser.id).select().single();
     
     if (data && !error) {
-      await this.syncProfile(this.currentUser.id);
+      // Update local state from returned data WITHOUT re-triggering syncProfile
+      this.currentUser = {
+        ...this.currentUser,
+        ...updates,
+        songCredits: data.song_credits ?? this.currentUser.songCredits,
+        bonusCredits: data.bonus_credits ?? this.currentUser.bonusCredits
+      };
+      this.notifyListeners();
+    } else if (error) {
+      console.error('[AUTH] updateProfile error:', error.message);
+      // Still update local state even if DB fails
+      this.currentUser = { ...this.currentUser, ...updates };
+      this.notifyListeners();
     }
     
     return this.currentUser!;

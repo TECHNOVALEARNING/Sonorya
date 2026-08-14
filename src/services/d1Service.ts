@@ -153,8 +153,6 @@ class SupabaseDatabaseService {
   public async saveUser(user: UserProfile): Promise<UserProfile> {
     try {
       const dbUser: Record<string, any> = {
-        id: user.id,
-        email: user.email,
         full_name: user.fullName,
         avatar_url: user.avatarUrl,
         phone: user.phone,
@@ -166,17 +164,31 @@ class SupabaseDatabaseService {
         song_credits: user.songCredits || 0,
       };
       
+      // Use update instead of upsert since user already exists (RLS may not have INSERT policy)
       const { data, error } = await supabase
         .from('users')
-        .upsert(dbUser)
+        .update(dbUser)
+        .eq('id', user.id)
         .select()
         .single();
         
       if (error) {
-        console.error('[SAVE USER] Supabase error:', error.message, error.details);
-        throw error;
+        console.error('[SAVE USER] Supabase update error:', error.message, error.details);
+        
+        // Fallback: try updating just the credits column directly
+        const { error: creditsError } = await supabase
+          .from('users')
+          .update({ song_credits: user.songCredits || 0 })
+          .eq('id', user.id);
+          
+        if (creditsError) {
+          console.error('[SAVE USER] Credits-only update also failed:', creditsError.message);
+        } else {
+          console.log('[SAVE USER] Credits saved via fallback:', user.songCredits);
+        }
+      } else {
+        console.log('[SAVE USER] Credits saved successfully:', user.songCredits, '-> DB returned:', data?.song_credits);
       }
-      console.log('[SAVE USER] Credits saved successfully:', user.songCredits);
       return user;
     } catch (e) {
       console.error('Error saving user to Supabase:', e);

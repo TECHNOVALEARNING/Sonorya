@@ -95,7 +95,8 @@ export const App: React.FC = () => {
           const newCredits = (currentUser.songCredits || 0) + (pending.credits || 1);
           const updatedUser = { ...currentUser, songCredits: newCredits };
           await d1Database.saveUser(updatedUser);
-          authRepository.updateProfile(updatedUser);
+          // Use setCurrentUserLocally to avoid syncProfile overwriting credits
+          authRepository.setCurrentUserLocally({ songCredits: newCredits });
           setUser(updatedUser);
           localStorage.removeItem('sonorya_pending_purchase');
           window.history.replaceState({}, document.title, window.location.pathname);
