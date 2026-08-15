@@ -71,8 +71,36 @@ export const PricingProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   const getPrice = (baseXof: number): PriceDetails => {
-    // MODE TEST - PRIX FORCÉ À 1 FCFA (À retirer en production)
-    return { amount: 1, formatted: `1 FCFA`, currency: 'XOF' };
+    if (currency === 'EUR') {
+      let amount = 3.99;
+      if (baseXof === 1999) amount = 3.99;
+      else if (baseXof === 2500) amount = 4.99;
+      else if (baseXof === 2999) amount = 5.99;
+      else if (baseXof === 3500) amount = 6.99;
+      else if (baseXof === 4000) amount = 7.99;
+      else if (baseXof === 7999) amount = 12.99;
+      else {
+        amount = Math.floor(baseXof / 655) + 0.99;
+      }
+      return { amount, formatted: `${amount.toFixed(2).replace('.', ',')} €`, currency };
+    }
+    
+    if (currency === 'USD') {
+      let amount = 4.99;
+      if (baseXof === 1999) amount = 4.99;
+      else if (baseXof === 2500) amount = 5.99;
+      else if (baseXof === 2999) amount = 6.99;
+      else if (baseXof === 3500) amount = 7.99;
+      else if (baseXof === 4000) amount = 8.99;
+      else if (baseXof === 7999) amount = 14.99;
+      else {
+        amount = Math.floor(baseXof / 600) + 0.99;
+      }
+      return { amount, formatted: `$${amount.toFixed(2)}`, currency };
+    }
+
+    // Default XOF
+    return { amount: baseXof, formatted: `${baseXof.toLocaleString('fr-FR')} FCFA`, currency };
   };
 
   return (
