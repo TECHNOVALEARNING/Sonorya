@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
+import { Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-dom';
 import { IzimeloHeader } from './components/izimelo/IzimeloHeader';
 import { IzimeloHero } from './components/izimelo/IzimeloHero';
 import { OccasionsTicker } from './components/izimelo/OccasionsTicker';
@@ -317,7 +317,7 @@ export const App: React.FC = () => {
           user?.role === 'admin' ? (
             <AdminDashboard user={user} onLogout={handleLogout} onBackToLanding={() => navigate('/')} />
           ) : (
-            <div style={{color:'white', padding:50}}>Accès refusé</div>
+            <Navigate to="/" replace />
           )
         } />
 
@@ -343,7 +343,7 @@ export const App: React.FC = () => {
               onClearRecoveredMetadata={() => setRecoveredSongMetadata(null)}
             />
           ) : (
-            <div style={{color:'white', padding:50}}>Veuillez vous connecter.</div>
+            <Navigate to="/" replace />
           )
         } />
 
@@ -369,7 +369,7 @@ export const App: React.FC = () => {
               onClearRecoveredMetadata={() => setRecoveredSongMetadata(null)}
             />
           ) : (
-            <div style={{color:'white', padding:50}}>Veuillez vous connecter.</div>
+            <Navigate to="/" replace />
           )
         } />
 
