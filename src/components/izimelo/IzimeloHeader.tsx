@@ -26,7 +26,7 @@ export const IzimeloHeader: React.FC<IzimeloHeaderProps> = ({
   return (
     <header className="izimelo-header">
       <div className="wrap header-inner">
-        <a href="#" className="logo" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <a href="#" onClick={(e) => e.preventDefault()} className="logo" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <img src="/images/sonorya-app-logo.png" alt="Sonorya Logo" style={{ width: 34, height: 34, borderRadius: 8, objectFit: 'cover' }} />
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <div>
@@ -43,12 +43,12 @@ export const IzimeloHeader: React.FC<IzimeloHeaderProps> = ({
 
         {/* Desktop nav */}
         <nav className="izimelo-nav izimelo-nav-desktop">
-          <a href="#pricing">{lang === 'FR' ? 'Tarifs' : 'Pricing'}</a>
-          <a href="#how">{t('header.howItWorks')}</a>
-          <a href="#examples">{t('header.examples')}</a>
-          <a href="#library">{t('header.library')}</a>
-          <a href="#reviews">{t('header.reviews')}</a>
-          <a href="#faq">{t('header.faq')}</a>
+          <a href="#" onClick={(e) => { e.preventDefault(); document.getElementById('pricing')?.scrollIntoView({behavior: 'smooth'}); }}>{lang === 'FR' ? 'Tarifs' : 'Pricing'}</a>
+          <a href="#" onClick={(e) => { e.preventDefault(); document.getElementById('how')?.scrollIntoView({behavior: 'smooth'}); }}>{t('header.howItWorks')}</a>
+          <a href="#" onClick={(e) => { e.preventDefault(); document.getElementById('examples')?.scrollIntoView({behavior: 'smooth'}); }}>{t('header.examples')}</a>
+          <a href="#" onClick={(e) => { e.preventDefault(); document.getElementById('library')?.scrollIntoView({behavior: 'smooth'}); }}>{t('header.library')}</a>
+          <a href="#" onClick={(e) => { e.preventDefault(); document.getElementById('reviews')?.scrollIntoView({behavior: 'smooth'}); }}>{t('header.reviews')}</a>
+          <a href="#" onClick={(e) => { e.preventDefault(); document.getElementById('faq')?.scrollIntoView({behavior: 'smooth'}); }}>{t('header.faq')}</a>
 
           <button className="link-btn" onClick={() => setLang(lang === 'FR' ? 'EN' : 'FR')} style={{ fontSize: 13 }}>
             <Globe size={15} />
@@ -117,12 +117,12 @@ export const IzimeloHeader: React.FC<IzimeloHeaderProps> = ({
       {/* Mobile drawer */}
       {mobileOpen && (
         <div className="mobile-nav-drawer">
-          <a href="#pricing" onClick={() => setMobileOpen(false)}>{lang === 'FR' ? 'Tarifs & Formules' : 'Pricing & Plans'}</a>
-          <a href="#how" onClick={() => setMobileOpen(false)}>{t('header.howItWorks')}</a>
-          <a href="#examples" onClick={() => setMobileOpen(false)}>{t('header.examples')}</a>
-          <a href="#library" onClick={() => setMobileOpen(false)}>{t('header.library')}</a>
-          <a href="#reviews" onClick={() => setMobileOpen(false)}>{t('header.reviews')}</a>
-          <a href="#faq" onClick={() => setMobileOpen(false)}>{t('header.faq')}</a>
+          <a href="#" onClick={(e) => { e.preventDefault(); document.getElementById('pricing')?.scrollIntoView({behavior: 'smooth'}); setMobileOpen(false); }}>{lang === 'FR' ? 'Tarifs & Formules' : 'Pricing & Plans'}</a>
+          <a href="#" onClick={(e) => { e.preventDefault(); document.getElementById('how')?.scrollIntoView({behavior: 'smooth'}); setMobileOpen(false); }}>{t('header.howItWorks')}</a>
+          <a href="#" onClick={(e) => { e.preventDefault(); document.getElementById('examples')?.scrollIntoView({behavior: 'smooth'}); setMobileOpen(false); }}>{t('header.examples')}</a>
+          <a href="#" onClick={(e) => { e.preventDefault(); document.getElementById('library')?.scrollIntoView({behavior: 'smooth'}); setMobileOpen(false); }}>{t('header.library')}</a>
+          <a href="#" onClick={(e) => { e.preventDefault(); document.getElementById('reviews')?.scrollIntoView({behavior: 'smooth'}); setMobileOpen(false); }}>{t('header.reviews')}</a>
+          <a href="#" onClick={(e) => { e.preventDefault(); document.getElementById('faq')?.scrollIntoView({behavior: 'smooth'}); setMobileOpen(false); }}>{t('header.faq')}</a>
           
           <button className="link-btn" onClick={() => { setLang(lang === 'FR' ? 'EN' : 'FR'); setMobileOpen(false); }}>
             <Globe size={15} />

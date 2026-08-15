@@ -17,14 +17,18 @@ if (!localStorage.getItem('supabase_migration_cleared_v1')) {
   window.location.reload();
 }
 
+import { BrowserRouter } from 'react-router-dom';
+
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>
-    <LanguageProvider>
-      <PricingProvider>
-        <ToastProvider>
-          <App />
-        </ToastProvider>
-      </PricingProvider>
-    </LanguageProvider>
+    <BrowserRouter>
+      <LanguageProvider>
+        <PricingProvider>
+          <ToastProvider>
+            <App />
+          </ToastProvider>
+        </PricingProvider>
+      </LanguageProvider>
+    </BrowserRouter>
   </React.StrictMode>
 );

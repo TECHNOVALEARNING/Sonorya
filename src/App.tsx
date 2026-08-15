@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { IzimeloHeader } from './components/izimelo/IzimeloHeader';
 import { IzimeloHero } from './components/izimelo/IzimeloHero';
 import { OccasionsTicker } from './components/izimelo/OccasionsTicker';
@@ -34,6 +35,9 @@ import { supabase } from './services/supabaseClient';
 type LandingView = 'home' | 'contact' | 'terms' | 'privacy';
 
 export const App: React.FC = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+
   const [user, setUser] = useState<UserProfile | null>(() => authRepository.getCurrentUser());
   
   useEffect(() => {
@@ -55,7 +59,7 @@ export const App: React.FC = () => {
     if (!paymentStatus) return;
     
     // Toujours basculer vers le dashboard au retour de Moneroo
-    setAppView('dashboard');
+    navigate('/dashboard');
     
     // Traitement des achats de crédits
     if (paymentStatus === 'verify' && !creditPaymentProcessedRef.current) {
@@ -121,8 +125,8 @@ export const App: React.FC = () => {
       }
     } else if (paymentStatus === 'verify_song' && paymentId) {
       // Pour les chansons, vérifier via le même endpoint puis restaurer le wizard
-      setDashboardView('create');
-      setAppView('dashboard');
+      navigate('/create');
+      navigate('/dashboard');
       
       // Vérifier la transaction et récupérer les metadata (données du wizard)
       if (!creditPaymentProcessedRef.current) {
@@ -173,16 +177,15 @@ export const App: React.FC = () => {
       }
     } else if (paymentStatus === 'verify_song') {
       // Pas de paymentId → juste naviguer vers le wizard
-      setDashboardView('create');
-      setAppView('dashboard');
+      navigate('/create');
+      navigate('/dashboard');
       window.history.replaceState({}, document.title, window.location.pathname);
     }
   }, [user]);
 
   const { showToast } = useToast();
   const { lang, setLang } = useTranslation();
-  const [landingView, setLandingView] = useState<LandingView>('home');
-
+  
   const [orders, setOrders] = useState<Song[]>([]);
 
   useEffect(() => {
@@ -194,8 +197,7 @@ export const App: React.FC = () => {
   }, []);
 
   const [orderDraft, setOrderDraft] = useState<Partial<Song> | null>(null);
-  const [dashboardView, setDashboardView] = useState<string>('home');
-  const [recoveredSongMetadata, setRecoveredSongMetadata] = useState<any>(null);
+    const [recoveredSongMetadata, setRecoveredSongMetadata] = useState<any>(null);
   const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showCreditModal, setShowCreditModal] = useState(false);
@@ -221,7 +223,7 @@ export const App: React.FC = () => {
       setShowAuthModal(true);
       return;
     }
-    setDashboardView('create');
+    navigate('/create');
   };
 
   const handleSongCreated = (newSong: Song) => {
@@ -281,28 +283,14 @@ export const App: React.FC = () => {
     }
   };
 
-  const [appView, setAppView] = useState<'landing' | 'dashboard' | 'admin'>(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('payment_status')) {
-      return 'dashboard';
-    }
-    const saved = sessionStorage.getItem('sonorya_app_view');
-    if (saved === 'dashboard' || saved === 'landing' || saved === 'admin') {
-      return saved as 'landing' | 'dashboard' | 'admin';
-    }
-    return 'landing';
-  });
-
-  useEffect(() => {
-    sessionStorage.setItem('sonorya_app_view', appView);
-  }, [appView]);
-
+  
+  
   const handleLogout = () => {
     authRepository.logout();
     setUser(null);
-    setAppView('landing');
+    navigate('/');
     setIsPlaying(false);
-    setLandingView('home');
+    navigate('/');
     sessionStorage.removeItem('sonorya_app_view');
   };
 
@@ -310,137 +298,135 @@ export const App: React.FC = () => {
   useEffect(() => {
     if (user) {
       if (user.role === 'admin') {
-        setAppView('admin');
-      } else if (appView === 'landing' && sessionStorage.getItem('sonorya_oauth_pending') === 'true') {
+        navigate('/admin');
+      } else if (location.pathname === '/' && sessionStorage.getItem('sonorya_oauth_pending') === 'true') {
         sessionStorage.removeItem('sonorya_oauth_pending');
-        setAppView('dashboard');
+        navigate('/dashboard');
       }
     }
-  }, [user, appView]);
+  }, [user, location.pathname, navigate]);
 
-  if (appView === 'admin' && user?.role === 'admin') {
-    return <AdminDashboard user={user} onLogout={handleLogout} onBackToLanding={() => setAppView('landing')} />;
-  }
 
-  if (appView === 'dashboard' && user) {
-    return (
-      <div className="app-root">
-        <AnimatedBackground />
-        <ClientDashboard
-          user={user}
-          orders={orders}
-          onLogout={handleLogout}
-          onOpenCreate={handleOpenWizard}
-          onSongCreated={handleSongCreated}
-          onToggleFavorite={handleToggleFavorite}
-          isPlaying={isPlaying}
-          currentSongIndex={currentSongIndex}
-          setCurrentSongIndex={setCurrentSongIndex}
-          setIsPlaying={setIsPlaying}
-          onPlaySong={handlePlaySong}
-          onUpdateUser={(updated) => setUser({ ...user, ...updated })}
-          initialView={dashboardView}
-          onBackToLanding={() => setAppView('landing')}
-          onOpenRechargeCredits={() => setShowCreditModal(true)}
-          recoveredSongMetadata={recoveredSongMetadata}
-          onClearRecoveredMetadata={() => setRecoveredSongMetadata(null)}
-        />
-
-        {/* Credit Purchase Modal */}
-        {showCreditModal && (
-          <CreditPurchaseModal
-            user={user}
-            onClose={() => setShowCreditModal(false)}
-            onSuccess={(updatedUser) => setUser(updatedUser)}
-            onOpenLogin={() => {
-              setAuthMode('login');
-              setShowAuthModal(true);
-            }}
-          />
-        )}
-
-        {/* Preview Modal before Payment */}
-        {showPreviewModal && orderDraft && (
-          <AudioPreviewModal
-            orderDraft={orderDraft}
-            onClose={() => setShowPreviewModal(false)}
-            onProceedToPayment={handleProceedToPayment}
-          />
-        )}
-
-        {/* Moneroo Payment Modal */}
-        {showPaymentModal && orderDraft && (
-          <PaymentModal
-            orderDraft={orderDraft}
-            onClose={() => setShowPaymentModal(false)}
-            onPaymentSuccess={handlePaymentSuccess}
-          />
-        )}
-      </div>
-    );
-  }
-
+  // Render routing
   return (
     <div className="app-root">
       <AnimatedBackground />
-      <div className="landing-layout">
-        <IzimeloHeader
-          user={user}
-          onOpenCreate={handleOpenWizard}
-          onOpenLogin={() => {
-            if (user) {
-              setAppView(user.role === 'admin' ? 'admin' : 'dashboard');
-            } else {
-              setAuthMode('login');
-              setIntent(null);
-              setShowAuthModal(true);
-            }
-          }}
-          onGoToDashboard={() => setAppView(user?.role === 'admin' ? 'admin' : 'dashboard')}
-          onOpenRechargeCredits={() => setShowCreditModal(true)}
-        />
+      
+      <Routes>
+        <Route path="/admin" element={
+          user?.role === 'admin' ? (
+            <AdminDashboard user={user} onLogout={handleLogout} onBackToLanding={() => navigate('/')} />
+          ) : (
+            <div style={{color:'white', padding:50}}>Accès refusé</div>
+          )
+        } />
 
-        <main>
-          {landingView === 'home' && (
-            <>
-              <IzimeloHero onOpenCreate={handleOpenWizard} />
-              <OccasionsTicker />
-              <IzimeloHowItWorks />
-              <IzimeloDemos />
-              <IzimeloCoverFlow />
-              <IzimeloTestimonials />
-              <IzimeloFAQ />
-              <IzimeloPricing
-                onOpenCreate={handleOpenWizard}
-                onSelectPlan={() => {
-                  if (!user) {
-                    setAuthMode('signup');
-                    setShowAuthModal(true);
-                  } else {
-                    setShowCreditModal(true);
-                  }
-                }}
-              />
-            </>
-          )}
+        <Route path="/dashboard" element={
+          user ? (
+            <ClientDashboard
+              user={user}
+              orders={orders}
+              onLogout={handleLogout}
+              onOpenCreate={handleOpenWizard}
+              onSongCreated={handleSongCreated}
+              onToggleFavorite={handleToggleFavorite}
+              isPlaying={isPlaying}
+              currentSongIndex={currentSongIndex}
+              setCurrentSongIndex={setCurrentSongIndex}
+              setIsPlaying={setIsPlaying}
+              onPlaySong={handlePlaySong}
+              onUpdateUser={(updated) => setUser({ ...user, ...updated })}
+              initialView="home"
+              onBackToLanding={() => navigate('/')}
+              onOpenRechargeCredits={() => setShowCreditModal(true)}
+              recoveredSongMetadata={recoveredSongMetadata}
+              onClearRecoveredMetadata={() => setRecoveredSongMetadata(null)}
+            />
+          ) : (
+            <div style={{color:'white', padding:50}}>Veuillez vous connecter.</div>
+          )
+        } />
 
-          {landingView === 'contact' && (
-            <ContactPage onBack={() => setLandingView('home')} />
-          )}
+        <Route path="/create" element={
+          user ? (
+            <ClientDashboard
+              user={user}
+              orders={orders}
+              onLogout={handleLogout}
+              onOpenCreate={handleOpenWizard}
+              onSongCreated={handleSongCreated}
+              onToggleFavorite={handleToggleFavorite}
+              isPlaying={isPlaying}
+              currentSongIndex={currentSongIndex}
+              setCurrentSongIndex={setCurrentSongIndex}
+              setIsPlaying={setIsPlaying}
+              onPlaySong={handlePlaySong}
+              onUpdateUser={(updated) => setUser({ ...user, ...updated })}
+              initialView="create"
+              onBackToLanding={() => navigate('/')}
+              onOpenRechargeCredits={() => setShowCreditModal(true)}
+              recoveredSongMetadata={recoveredSongMetadata}
+              onClearRecoveredMetadata={() => setRecoveredSongMetadata(null)}
+            />
+          ) : (
+            <div style={{color:'white', padding:50}}>Veuillez vous connecter.</div>
+          )
+        } />
 
-          {landingView === 'terms' && (
-            <LegalPage type="terms" onBack={() => setLandingView('home')} />
-          )}
+        <Route path="/*" element={
+          <div className="landing-layout">
+            <IzimeloHeader
+              user={user}
+              onOpenCreate={handleOpenWizard}
+              onOpenLogin={() => {
+                if (user) {
+                  navigate(user.role === 'admin' ? '/admin' : '/dashboard');
+                } else {
+                  setAuthMode('login');
+                  setIntent(null);
+                  setShowAuthModal(true);
+                }
+              }}
+              onGoToDashboard={() => navigate(user?.role === 'admin' ? '/admin' : '/dashboard')}
+              onOpenRechargeCredits={() => setShowCreditModal(true)}
+            />
 
-          {landingView === 'privacy' && (
-            <LegalPage type="privacy" onBack={() => setLandingView('home')} />
-          )}
-        </main>
+            <main>
+              <Routes>
+                <Route path="/" element={
+                  <>
+                    <IzimeloHero onOpenCreate={handleOpenWizard} />
+                    <OccasionsTicker />
+                    <IzimeloHowItWorks />
+                    <IzimeloDemos />
+                    <IzimeloCoverFlow />
+                    <IzimeloTestimonials />
+                    <IzimeloFAQ />
+                    <IzimeloPricing
+                      onOpenCreate={handleOpenWizard}
+                      onSelectPlan={() => {
+                        if (!user) {
+                          setAuthMode('signup');
+                          setShowAuthModal(true);
+                        } else {
+                          setShowCreditModal(true);
+                        }
+                      }}
+                    />
+                  </>
+                } />
+                <Route path="/contact" element={<ContactPage onBack={() => navigate('/')} />} />
+                <Route path="/terms" element={<LegalPage type="terms" onBack={() => navigate('/')} />} />
+                <Route path="/privacy" element={<LegalPage type="privacy" onBack={() => navigate('/')} />} />
+              </Routes>
+            </main>
 
-        <LandingFooter onNavigate={(view) => setLandingView(view as LandingView)} onOpenCreate={handleOpenWizard} />
-      </div>
+            <LandingFooter onNavigate={(view) => navigate(view === 'home' ? '/' : `/${view}`)} onOpenCreate={handleOpenWizard} />
+          </div>
+        } />
+      </Routes>
 
-      {/* Credit Purchase Modal */}
+      {/* Modals... */}
       {showCreditModal && (
         <CreditPurchaseModal
           user={user}
@@ -453,7 +439,6 @@ export const App: React.FC = () => {
         />
       )}
 
-      {/* Preview Modal before Payment */}
       {showPreviewModal && orderDraft && (
         <AudioPreviewModal
           orderDraft={orderDraft}
@@ -462,7 +447,6 @@ export const App: React.FC = () => {
         />
       )}
 
-      {/* Moneroo Payment Modal */}
       {showPaymentModal && orderDraft && (
         <PaymentModal
           orderDraft={orderDraft}
@@ -471,7 +455,6 @@ export const App: React.FC = () => {
         />
       )}
 
-      {/* Order History Modal ("Mes Chansons") */}
       {showHistoryModal && (
         <OrderHistoryModal
           orders={orders}
@@ -479,7 +462,6 @@ export const App: React.FC = () => {
         />
       )}
 
-      {/* Auth Modal */}
       {showAuthModal && (
         <AuthModal
           initialMode={authMode}
@@ -487,8 +469,7 @@ export const App: React.FC = () => {
           onSuccess={(loggedInUser) => {
             setShowAuthModal(false);
             setUser(loggedInUser);
-            setAppView(loggedInUser.role === 'admin' ? 'admin' : 'dashboard');
-            // Claim all session songs for this logged in user so they stay saved under their account
+            navigate(loggedInUser.role === 'admin' ? '/admin' : '/dashboard');
             setOrders(prev => {
               return prev.map(s => {
                 if (!s.userId || s.userId === 'user-current') {
@@ -500,17 +481,14 @@ export const App: React.FC = () => {
               });
             });
             if (loggedInUser.role === 'admin') {
-              setAppView('admin');
+              navigate('/admin');
             } else {
-              setDashboardView(intent === 'wizard' ? 'create' : 'home');
-              setAppView('dashboard');
+              navigate(intent === 'wizard' ? '/create' : '/dashboard');
               setIntent(null);
             }
           }}
         />
       )}
-
-      {/* Sticky Bottom Audio Player (only on landing page, never visible anymore since we don't play songs on landing) */}
     </div>
   );
 };

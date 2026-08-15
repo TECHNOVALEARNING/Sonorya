@@ -74,21 +74,21 @@ export const LandingFooter: React.FC<LandingFooterProps> = ({ onNavigate, onOpen
               {t('footer.desc')}
             </p>
             <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
-              <a href="#" style={{ color: 'var(--ivory-dim)', transition: 'color 0.2s' }} title="Instagram"><Instagram size={20} /></a>
-              <a href="#" style={{ color: 'var(--ivory-dim)', transition: 'color 0.2s', display: 'inline-flex' }} title="TikTok">
+              <a href="#" onClick={(e) => e.preventDefault()} style={{ color: 'var(--ivory-dim)', transition: 'color 0.2s' }} title="Instagram"><Instagram size={20} /></a>
+              <a href="#" onClick={(e) => e.preventDefault()} style={{ color: 'var(--ivory-dim)', transition: 'color 0.2s', display: 'inline-flex' }} title="TikTok">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M19.589 6.686a4.793 4.793 0 0 1-3.77-4.245V2h-3.445v13.672a2.896 2.896 0 0 1-2.891 2.887 2.895 2.895 0 0 1-2.892-2.887 2.895 2.895 0 0 1 2.892-2.887c.277 0 .543.042.795.116V9.414a6.315 6.315 0 0 0-.795-.05 6.337 6.337 0 0 0-6.337 6.334 6.337 6.337 0 0 0 6.337 6.334 6.337 6.337 0 0 0 6.334-6.334V8.349a8.17 8.17 0 0 0 4.772 1.522V6.432a4.815 4.815 0 0 1-1.000.254z"/>
                 </svg>
               </a>
-              <a href="#" style={{ color: 'var(--ivory-dim)', transition: 'color 0.2s' }} title="Facebook"><Facebook size={20} /></a>
+              <a href="#" onClick={(e) => e.preventDefault()} style={{ color: 'var(--ivory-dim)', transition: 'color 0.2s' }} title="Facebook"><Facebook size={20} /></a>
             </div>
           </div>
 
           <div style={{ flex: '1 1 150px' }}>
             <h4 style={{ fontSize: 13, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--ivory)', marginBottom: 24 }}>{t('footer.discover')}</h4>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16, fontSize: 14 }}>
-              <a href="#how" onClick={(e) => { e.preventDefault(); if(onNavigate) { onNavigate('home'); setTimeout(() => document.getElementById('how')?.scrollIntoView(), 100); } else { document.getElementById('how')?.scrollIntoView(); } }} style={{ color: 'var(--ivory-dim)', textDecoration: 'none', transition: 'color 0.2s', cursor: 'pointer' }}>{t('footer.howItWorks')}</a>
-              <a href="#examples" onClick={(e) => { e.preventDefault(); if(onNavigate) { onNavigate('home'); setTimeout(() => document.getElementById('examples')?.scrollIntoView(), 100); } else { document.getElementById('examples')?.scrollIntoView(); } }} style={{ color: 'var(--ivory-dim)', textDecoration: 'none', transition: 'color 0.2s', cursor: 'pointer' }}>{t('footer.examples')}</a>
+              <a href="#" onClick={(e) => { e.preventDefault(); if(onNavigate) { onNavigate('home'); setTimeout(() => document.getElementById('how')?.scrollIntoView({behavior:'smooth'}), 100); } else { document.getElementById('how')?.scrollIntoView({behavior:'smooth'}); } }} style={{ color: 'var(--ivory-dim)', textDecoration: 'none', transition: 'color 0.2s', cursor: 'pointer' }}>{t('footer.howItWorks')}</a>
+              <a href="#" onClick={(e) => { e.preventDefault(); if(onNavigate) { onNavigate('home'); setTimeout(() => document.getElementById('examples')?.scrollIntoView({behavior:'smooth'}), 100); } else { document.getElementById('examples')?.scrollIntoView({behavior:'smooth'}); } }} style={{ color: 'var(--ivory-dim)', textDecoration: 'none', transition: 'color 0.2s', cursor: 'pointer' }}>{t('footer.examples')}</a>
               <a
                 href="https://technovalearning.com/apps"
                 target="_blank"
@@ -140,7 +140,7 @@ export const LandingFooter: React.FC<LandingFooterProps> = ({ onNavigate, onOpen
           <div style={{ flex: '1 1 150px' }}>
             <h4 style={{ fontSize: 13, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--ivory)', marginBottom: 24 }}>{t('footer.support')}</h4>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16, fontSize: 14 }}>
-              <a href="#faq" onClick={(e) => { e.preventDefault(); if(onNavigate) { onNavigate('home'); setTimeout(() => document.getElementById('faq')?.scrollIntoView(), 100); } else { document.getElementById('faq')?.scrollIntoView(); } }} style={{ color: 'var(--ivory-dim)', textDecoration: 'none', transition: 'color 0.2s', cursor: 'pointer' }}>{t('footer.faq')}</a>
+              <a href="#" onClick={(e) => { e.preventDefault(); if(onNavigate) { onNavigate('home'); setTimeout(() => document.getElementById('faq')?.scrollIntoView({behavior:'smooth'}), 100); } else { document.getElementById('faq')?.scrollIntoView({behavior:'smooth'}); } }} style={{ color: 'var(--ivory-dim)', textDecoration: 'none', transition: 'color 0.2s', cursor: 'pointer' }}>{t('footer.faq')}</a>
               <a href="#" onClick={(e) => handleNav(e, 'contact')} style={{ color: 'var(--ivory-dim)', textDecoration: 'none', transition: 'color 0.2s' }}>{t('footer.contact')}</a>
             </div>
           </div>

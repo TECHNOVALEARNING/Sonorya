@@ -27,6 +27,8 @@ interface ClientDashboardProps {
   onClearRecoveredMetadata?: () => void;
 }
 
+import { useNavigate } from 'react-router-dom';
+
 export const ClientDashboard: React.FC<ClientDashboardProps> = ({ 
   user, 
   orders, 
@@ -46,6 +48,7 @@ export const ClientDashboard: React.FC<ClientDashboardProps> = ({
   recoveredSongMetadata,
   onClearRecoveredMetadata
 }) => {
+  const navigate = useNavigate();
   const [currentView, setCurrentView] = useState(initialView);
   const [draftInfo, setDraftInfo] = useState<{ title?: string; lyrics?: string; genre?: string }>({});
   const [audioCurrentTime, setAudioCurrentTime] = useState<number>(0);
@@ -170,7 +173,11 @@ export const ClientDashboard: React.FC<ClientDashboardProps> = ({
       <DashboardSidebar 
         currentView={currentView} 
         onNavigate={(view) => {
-          setCurrentView(view);
+          if (view === 'create') {
+            navigate('/create');
+          } else {
+            navigate('/dashboard');
+          }
           setIsMobileMenuOpen(false);
         }} 
         onLogout={onLogout} 
