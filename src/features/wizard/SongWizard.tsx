@@ -367,16 +367,14 @@ export const SongWizard: React.FC<SongWizardProps> = ({
   const wizardInnerContent = (
     <div
       style={{
-        background: 'linear-gradient(180deg, rgba(22, 25, 38, 0.96) 0%, rgba(14, 17, 27, 0.98) 100%)',
-        border: '1px solid rgba(255, 255, 255, 0.09)',
-        borderRadius: 28,
-        padding: '32px 32px 36px',
+        background: '#090B10', // Deep elegant dark matching theme
+        border: '1px solid rgba(255, 255, 255, 0.05)',
+        borderRadius: 24,
+        padding: '36px',
         width: '100%',
         margin: '0 auto 40px',
-        boxShadow: '0 24px 80px rgba(0, 0, 0, 0.65)',
-        position: 'relative',
-        backdropFilter: 'blur(20px)',
-        WebkitBackdropFilter: 'blur(20px)'
+        boxShadow: '0 24px 60px rgba(0, 0, 0, 0.8)',
+        position: 'relative'
       }}
     >
       {!isEmbedded && (
@@ -444,13 +442,13 @@ export const SongWizard: React.FC<SongWizardProps> = ({
             borderRadius: 14,
             fontSize: 13.5,
             fontWeight: 800,
-            border: 'none',
             cursor: 'pointer',
             background: activeTab === 'description' 
-              ? 'linear-gradient(135deg, #2DD4BF 0%, #0EA5E9 100%)' 
+              ? 'rgba(255, 255, 255, 0.12)' 
               : 'rgba(255, 255, 255, 0.035)',
-            color: activeTab === 'description' ? '#0F172A' : 'rgba(255, 255, 255, 0.7)',
-            boxShadow: activeTab === 'description' ? '0 6px 20px rgba(45, 212, 191, 0.35)' : 'none',
+            color: activeTab === 'description' ? '#FFFFFF' : 'rgba(255, 255, 255, 0.6)',
+            border: activeTab === 'description' ? '1px solid rgba(255, 255, 255, 0.15)' : '1px solid transparent',
+            boxShadow: activeTab === 'description' ? '0 4px 16px rgba(0, 0, 0, 0.2)' : 'none',
             transition: 'all 0.2s ease'
           }}
         >
@@ -467,13 +465,13 @@ export const SongWizard: React.FC<SongWizardProps> = ({
             borderRadius: 14,
             fontSize: 13.5,
             fontWeight: 800,
-            border: 'none',
             cursor: 'pointer',
             background: activeTab === 'lyrics' 
-              ? 'linear-gradient(135deg, #2DD4BF 0%, #0EA5E9 100%)' 
+              ? 'rgba(255, 255, 255, 0.12)' 
               : 'rgba(255, 255, 255, 0.035)',
-            color: activeTab === 'lyrics' ? '#0F172A' : 'rgba(255, 255, 255, 0.7)',
-            boxShadow: activeTab === 'lyrics' ? '0 6px 20px rgba(45, 212, 191, 0.35)' : 'none',
+            color: activeTab === 'lyrics' ? '#FFFFFF' : 'rgba(255, 255, 255, 0.6)',
+            border: activeTab === 'lyrics' ? '1px solid rgba(255, 255, 255, 0.15)' : '1px solid transparent',
+            boxShadow: activeTab === 'lyrics' ? '0 4px 16px rgba(0, 0, 0, 0.2)' : 'none',
             transition: 'all 0.2s ease'
           }}
         >
@@ -805,8 +803,8 @@ export const SongWizard: React.FC<SongWizardProps> = ({
               width: '100%',
               padding: '18px 24px',
               borderRadius: 18,
-              background: 'linear-gradient(135deg, #2DD4BF 0%, #0EA5E9 100%)',
-              color: '#0F172A',
+              background: 'linear-gradient(135deg, #F5B978 0%, #E89E53 100%)',
+              color: '#090B10',
               border: 'none',
               fontSize: 16,
               fontWeight: 800,
@@ -815,8 +813,8 @@ export const SongWizard: React.FC<SongWizardProps> = ({
               justifyContent: 'center',
               gap: 10,
               cursor: 'pointer',
-              boxShadow: '0 12px 35px rgba(45, 212, 191, 0.35)',
-              transition: 'transform 0.15s ease, boxShadow 0.15s ease'
+              boxShadow: '0 8px 24px rgba(245, 185, 120, 0.3)',
+              transition: 'transform 0.15s ease, box-shadow 0.15s ease'
             }}
           >
             <Plus size={20} /> Créer ma chanson
@@ -896,9 +894,11 @@ export const SongWizard: React.FC<SongWizardProps> = ({
                       fontWeight: 800,
                       justifyContent: 'center', 
                       borderRadius: 16,
-                      background: 'linear-gradient(135deg, #2DD4BF 0%, #0EA5E9 100%)',
-                      color: '#0F172A',
-                      boxShadow: '0 10px 30px rgba(45, 212, 191, 0.35)'
+                      background: 'linear-gradient(135deg, #F5B978 0%, #E89E53 100%)',
+                      color: '#090B10',
+                      border: 'none',
+                      boxShadow: '0 8px 24px rgba(245, 185, 120, 0.3)',
+                      transition: 'transform 0.15s ease, box-shadow 0.15s ease'
                     }} 
                     onClick={handleUseCredit}
                   >
@@ -906,14 +906,22 @@ export const SongWizard: React.FC<SongWizardProps> = ({
                   </button>
                 ) : (
                   <button 
-                    className="btn-emerald" 
                     style={{ 
                       flex: 2, 
                       padding: '16px 24px', 
                       fontSize: 16, 
                       fontWeight: 800,
-                      justifyContent: 'center', 
-                      borderRadius: 16 
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 8,
+                      borderRadius: 16,
+                      background: 'linear-gradient(135deg, #F5B978 0%, #E89E53 100%)',
+                      color: '#090B10',
+                      border: 'none',
+                      cursor: 'pointer',
+                      boxShadow: '0 8px 24px rgba(245, 185, 120, 0.3)',
+                      transition: 'transform 0.15s ease, box-shadow 0.15s ease'
                     }} 
                     onClick={() => onOpenRechargeCredits ? onOpenRechargeCredits() : setStep(1)}
                   >

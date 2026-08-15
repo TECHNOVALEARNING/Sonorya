@@ -151,15 +151,15 @@ export const DashboardSidebar: React.FC<SidebarProps> = ({
                 justifyContent: 'center',
                 gap: 6,
                 padding: '7px 10px',
-                background: 'linear-gradient(135deg, #2DD4BF, #0EA5E9)',
-                color: '#0F172A',
+                background: 'linear-gradient(135deg, #F5B978 0%, #E89E53 100%)',
+                color: '#090B10',
                 border: 'none',
                 borderRadius: 8,
                 fontSize: 11,
                 fontWeight: 800,
                 cursor: 'pointer',
                 transition: 'transform 0.15s ease',
-                boxShadow: '0 2px 8px rgba(45, 212, 191, 0.25)'
+                boxShadow: '0 4px 12px rgba(245, 185, 120, 0.25)'
               }}
             >
               <span>+ Recharger mes crédits</span>

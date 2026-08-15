@@ -50,7 +50,7 @@ export const DashboardPlayer: React.FC<PlayerProps> = ({
   const effectiveDuration = realDuration || fallbackDuration;
 
   const formatTime = (sec: number) => {
-    if (isNaN(sec) || sec < 0) return '0:00';
+    if (isNaN(sec) || sec === Infinity || sec < 0) return '0:00';
     const m = Math.floor(sec / 60);
     const s = Math.floor(sec % 60);
     return `${m}:${s.toString().padStart(2, '0')}`;
@@ -93,17 +93,23 @@ export const DashboardPlayer: React.FC<PlayerProps> = ({
         audioRef.current.volume = isMuted ? 0 : volume / 100;
 
         audioRef.current.onloadedmetadata = () => {
-          if (audioRef.current && audioRef.current.duration && !isNaN(audioRef.current.duration)) {
+          if (audioRef.current && audioRef.current.duration && !isNaN(audioRef.current.duration) && audioRef.current.duration !== Infinity) {
             setRealDuration(audioRef.current.duration);
           }
         };
 
         audioRef.current.ontimeupdate = () => {
-          if (audioRef.current && audioRef.current.duration && !isNaN(audioRef.current.duration)) {
+          if (audioRef.current && !isNaN(audioRef.current.currentTime)) {
             const curTime = audioRef.current.currentTime;
-            const dur = audioRef.current.duration;
-            setRealDuration(dur);
-            const pct = (curTime / dur) * 100;
+            let dur = audioRef.current.duration;
+            
+            if (isNaN(dur) || dur === Infinity) {
+              dur = fallbackDuration;
+            } else {
+              setRealDuration(dur);
+            }
+            
+            const pct = dur > 0 ? (curTime / dur) * 100 : 0;
             setProgress(pct);
             setElapsed(formatTime(curTime));
             if (onTimeUpdate) onTimeUpdate(curTime, dur);

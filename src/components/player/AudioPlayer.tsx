@@ -93,9 +93,10 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
   const remainingSeconds = durationSec - currentSeconds;
 
   const formatTime = (sec: number) => {
+    if (isNaN(sec) || sec === Infinity || sec < 0) return '0:00';
     const m = Math.floor(sec / 60);
     const s = Math.floor(sec % 60);
-    return `${m}:${s < 10 ? '0' : ''}${s}`;
+    return `${m}:${s.toString().padStart(2, '0')}`;
   };
 
   const speeds = [0.5, 1.0, 1.25, 1.5, 2.0];
