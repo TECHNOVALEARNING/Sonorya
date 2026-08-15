@@ -65,6 +65,8 @@ export const App: React.FC = () => {
           return;
         }
 
+        creditPaymentProcessedRef.current = true; // Empêcher la double exécution (Strict Mode)
+
         try {
           console.log('[PAYMENT] Verifying & crediting via server. PaymentId:', paymentId);
           

@@ -29,6 +29,12 @@ export const DashboardPlayer: React.FC<PlayerProps> = ({
   const [volume, setVolume] = useState(80);
   const [isMuted, setIsMuted] = useState(false);
   const [isRepeat, setIsRepeat] = useState(false);
+  const isRepeatRef = useRef(isRepeat);
+  
+  useEffect(() => {
+    isRepeatRef.current = isRepeat;
+  }, [isRepeat]);
+
   const [isShuffle, setIsShuffle] = useState(false);
   const [elapsed, setElapsed] = useState('0:00');
   const [realDuration, setRealDuration] = useState<number | null>(null);
@@ -117,7 +123,7 @@ export const DashboardPlayer: React.FC<PlayerProps> = ({
         };
 
         audioRef.current.onended = () => {
-          if (isRepeat && audioRef.current) {
+          if (isRepeatRef.current && audioRef.current) {
             audioRef.current.currentTime = 0;
             audioRef.current.play().catch(console.error);
           } else {
