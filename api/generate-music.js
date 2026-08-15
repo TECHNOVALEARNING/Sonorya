@@ -55,11 +55,27 @@ export default async function handler(req, res) {
 
     const checkAudioUrl = (obj, depth = 0) => {
       if (!obj || depth > 6) return null;
+
+      // Pass 1: Prioritize .mp3 files strongly to avoid temporary CDN or stream links
+      const findStrict = (o, d) => {
+        if (!o || d > 6) return null;
+        if (typeof o === 'string' && (o.startsWith('http://') || o.startsWith('https://'))) {
+          if (o.includes('.mp3') || o.includes('.wav') || o.includes('.m4a')) return o;
+        }
+        if (typeof o === 'object') {
+          for (const key in o) {
+            const res = findStrict(o[key], d + 1);
+            if (res) return res;
+          }
+        }
+        return null;
+      };
+
+      const strictMatch = findStrict(obj, 0);
+      if (strictMatch) return strictMatch;
       
       if (typeof obj === 'string' && (obj.startsWith('http://') || obj.startsWith('https://'))) {
-        if (obj.includes('.mp3') || obj.includes('.wav') || obj.includes('.m4a') || 
-            obj.includes('.ogg') || obj.includes('.flac') || obj.includes('.aac') ||
-            obj.includes('/audio') || obj.includes('cdn') || obj.includes('storage')) {
+        if (obj.includes('/audio') || obj.includes('cdn') || obj.includes('storage')) {
           return obj;
         }
       }
