@@ -58,7 +58,7 @@ export const en = {
   coverflow: {
     badge: "MUSIC LIBRARY",
     title: "Explore our",
-    titleHighlight: "3D Cover Flow",
+    titleHighlight: "music library",
     subtitle: "Browse 10 custom musical compositions in interactive 3D cover flow."
   },
   testimonials: {

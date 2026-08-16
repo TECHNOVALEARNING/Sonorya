@@ -58,7 +58,7 @@ export const fr = {
   coverflow: {
     badge: "BIBLIOTHÈQUE MUSICALE",
     title: "Explorez notre",
-    titleHighlight: "Cover Flow 3D",
+    titleHighlight: "bibliothèque musicale",
     subtitle: "Parcourez les 10 plus belles compositions personnalisées en défilement tridimensionnel interactif."
   },
   testimonials: {
