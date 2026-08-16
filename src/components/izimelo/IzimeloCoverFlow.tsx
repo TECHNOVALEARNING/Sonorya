@@ -55,7 +55,7 @@ export const COVERFLOW_ITEMS: CoverFlowItem[] = [
   {
     id: 'cf-6',
     title: 'Il faut avoir l\'argent',
-    genre: 'Style Highlife / Zouglou',
+    genre: 'Style Highlife',
     duration: '3:25',
     coverUrl: 'https://i.pinimg.com/736x/f3/ee/93/f3ee93e52da8c5cd117aa22d2c52b8c8.jpg',
     audioSampleUrl: '/audios/argent.mp3'
