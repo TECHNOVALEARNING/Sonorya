@@ -54,35 +54,35 @@ export const COVERFLOW_ITEMS: CoverFlowItem[] = [
   },
   {
     id: 'cf-6',
-    title: 'Célébration du Mariage',
+    title: 'Il faut avoir l\'argent',
     genre: 'Style Highlife / Zouglou',
     duration: '3:25',
-    coverUrl: '/images/cover_anniversaire_highlife.png',
-    audioSampleUrl: '/audios/marriage.mp3'
+    coverUrl: 'https://i.pinimg.com/736x/f3/ee/93/f3ee93e52da8c5cd117aa22d2c52b8c8.jpg',
+    audioSampleUrl: '/audios/argent.mp3'
   },
   {
     id: 'cf-7',
-    title: 'Mon Amour Éternel',
+    title: 'La discipline est la clé de la réussite',
     genre: 'Style R&B Afro',
     duration: '3:05',
-    coverUrl: '/images/cover_rnb_afro.png',
-    audioSampleUrl: '/audios/Annif.mp3'
+    coverUrl: 'https://i.pinimg.com/736x/6a/84/e8/6a84e8f93cdee9aeeca9c1cfbc694763.jpg',
+    audioSampleUrl: '/audios/La discipline.mp3'
   },
   {
     id: 'cf-8',
-    title: 'Fierté de la Famille',
+    title: 'Entre deux mondes',
     genre: 'Style Gospel Mbalax',
     duration: '3:40',
-    coverUrl: '/images/cover_gospel_mbalax.png',
-    audioSampleUrl: '/audios/bac.mp3'
+    coverUrl: 'https://i.pinimg.com/736x/d2/38/28/d23828480c561e53b1e40f0d5de6c8e5.jpg',
+    audioSampleUrl: '/audios/Entre deux mondes.mp3'
   },
   {
     id: 'cf-9',
-    title: 'Douce Mélodie de Cotonou',
+    title: 'Elle me manque',
     genre: 'Style Zouk Romantique',
     duration: '2:55',
-    coverUrl: '/images/cover_zouk_romantic.png',
-    audioSampleUrl: '/audios/grand pere.mp3'
+    coverUrl: 'https://i.pinimg.com/736x/26/ba/40/26ba40d811dd3538cb71526f2cccc0f3.jpg',
+    audioSampleUrl: '/audios/elle me manque.mp3'
   },
   {
     id: 'cf-10',
