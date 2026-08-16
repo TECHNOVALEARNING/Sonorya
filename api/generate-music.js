@@ -7,6 +7,28 @@ export default async function handler(req, res) {
     const parsed = req.body || {};
     const apiKey = process.env.VITE_MUSIC_API_KEY || process.env.KIE_API_KEY || 'ce70092505bf96765228786f7116f9a4';
 
+    // Helper: ensure audio URL always ends with .mp3 extension
+    const ensureMp3Extension = (url) => {
+      if (!url || typeof url !== 'string') return url;
+      try {
+        const parsed = new URL(url);
+        const path = parsed.pathname;
+        // If the path already has an audio extension, don't touch it
+        if (/\.(mp3|wav|m4a|ogg|flac|aac|wma)$/i.test(path)) return url;
+        // If it has a query string with the extension, don't touch it
+        if (/\.(mp3|wav|m4a|ogg|flac|aac|wma)/i.test(parsed.search)) return url;
+        // Append .mp3 to the pathname
+        parsed.pathname = path.replace(/\/?$/, '') + '.mp3';
+        return parsed.toString();
+      } catch {
+        // If URL parsing fails, just append .mp3 if not already there
+        if (!/\.(mp3|wav|m4a|ogg|flac|aac|wma)(\?|$)/i.test(url)) {
+          return url + '.mp3';
+        }
+        return url;
+      }
+    };
+
     console.log('[KIE.AI VERCEL] Sending generate request...');
     
     let customMode = true;
@@ -167,8 +189,9 @@ export default async function handler(req, res) {
     if (immediateUrl) {
       const imageUrl = checkImageUrl(generateData);
       const generatedLyrics = checkLyrics(generateData);
-      console.log('[KIE.AI VERCEL] Got immediate audio URL:', immediateUrl);
-      return res.status(200).json({ audio_url: immediateUrl, image_url: imageUrl, lyrics: generatedLyrics });
+      const safeAudioUrl = ensureMp3Extension(immediateUrl);
+      console.log('[KIE.AI VERCEL] Got immediate audio URL:', immediateUrl, '-> safe:', safeAudioUrl);
+      return res.status(200).json({ audio_url: safeAudioUrl, image_url: imageUrl, lyrics: generatedLyrics });
     }
 
     if (taskIds.length === 0) {
@@ -204,8 +227,9 @@ export default async function handler(req, res) {
           if (audioUrl) {
             const imageUrl = checkImageUrl(pollData);
             const generatedLyrics = checkLyrics(pollData);
-            console.log('[KIE.AI VERCEL] ✅ Got audio URL:', audioUrl);
-            return res.status(200).json({ audio_url: audioUrl, image_url: imageUrl, lyrics: generatedLyrics });
+            const safeAudioUrl = ensureMp3Extension(audioUrl);
+            console.log('[KIE.AI VERCEL] ✅ Got audio URL:', audioUrl, '-> safe:', safeAudioUrl);
+            return res.status(200).json({ audio_url: safeAudioUrl, image_url: imageUrl, lyrics: generatedLyrics });
           }
 
           const status = pollData.status || pollData.data?.status || '';

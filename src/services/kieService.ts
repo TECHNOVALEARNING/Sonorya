@@ -21,6 +21,31 @@ export class KieService {
   }
 
   /**
+   * Ensures an audio URL always ends with .mp3 extension.
+   * Kie.ai sometimes returns URLs without file extensions, which causes
+   * playback failures when the browser/database stores the raw URL.
+   */
+  public static ensureMp3Extension(url: string): string {
+    if (!url) return url;
+    try {
+      const parsed = new URL(url);
+      const path = parsed.pathname;
+      // If the path already has an audio extension, don't touch it
+      if (/\.(mp3|wav|m4a|ogg|flac|aac|wma)$/i.test(path)) return url;
+      // If it has a query string with the extension, don't touch it
+      if (/\.(mp3|wav|m4a|ogg|flac|aac|wma)/i.test(parsed.search)) return url;
+      // Append .mp3 to the pathname
+      parsed.pathname = path.replace(/\/?$/, '') + '.mp3';
+      return parsed.toString();
+    } catch {
+      if (!/\.(mp3|wav|m4a|ogg|flac|aac|wma)(\?|$)/i.test(url)) {
+        return url + '.mp3';
+      }
+      return url;
+    }
+  }
+
+  /**
    * Generates a unique, high-resolution AI album cover URL tailored to the song title & genre
    */
   public static generateAiCoverUrl(title?: string, genre?: MusicalStyle): string {
@@ -64,9 +89,12 @@ export class KieService {
         const audioUrl = data.audio_url || data.audioUrl || (data.data && (data.data.audio_url || (Array.isArray(data.data) && data.data[0]?.audio_url)));
         if (audioUrl) {
           const imageUrl = data.image_url || data.imageUrl || (data.data && (data.data.image_url || (Array.isArray(data.data) && data.data[0]?.image_url)));
+          const safeAudioUrl = KieService.ensureMp3Extension(audioUrl);
+          const rawPreview = data.preview_url || audioUrl;
+          const safePreview = KieService.ensureMp3Extension(rawPreview);
           return {
-            audioUrl,
-            previewAudioUrl: data.preview_url || audioUrl,
+            audioUrl: safeAudioUrl,
+            previewAudioUrl: safePreview,
             coverUrl: imageUrl || data.image_url || data.imageUrl || dynamicAiCoverUrl,
             tempo: params.tempo,
             durationSeconds: data.duration || 180,

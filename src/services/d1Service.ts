@@ -10,6 +10,27 @@ export const cleanSongTitle = (rawTitle?: string): string => {
 
 class SupabaseDatabaseService {
   
+  /**
+   * Ensures an audio URL always ends with .mp3 extension.
+   * Prevents saving URLs without file extensions to the database.
+   */
+  private ensureMp3Extension(url?: string): string | undefined {
+    if (!url) return url;
+    try {
+      const parsed = new URL(url);
+      const path = parsed.pathname;
+      if (/\.(mp3|wav|m4a|ogg|flac|aac|wma)$/i.test(path)) return url;
+      if (/\.(mp3|wav|m4a|ogg|flac|aac|wma)/i.test(parsed.search)) return url;
+      parsed.pathname = path.replace(/\/?$/, '') + '.mp3';
+      return parsed.toString();
+    } catch {
+      if (!/\.(mp3|wav|m4a|ogg|flac|aac|wma)(\?|$)/i.test(url)) {
+        return url + '.mp3';
+      }
+      return url;
+    }
+  }
+
   // --- SONG METHODS ---
   public async getSongs(userId?: string): Promise<Song[]> {
     try {
@@ -67,8 +88,8 @@ class SupabaseDatabaseService {
         tempo: song.tempo,
         duration_seconds: song.durationSeconds,
         lyrics: song.lyrics,
-        audio_url: song.audioUrl,
-        preview_audio_url: song.previewAudioUrl,
+        audio_url: this.ensureMp3Extension(song.audioUrl),
+        preview_audio_url: this.ensureMp3Extension(song.previewAudioUrl),
         cover_url: song.coverUrl,
         status: song.status,
         is_favorite: song.isFavorite,
