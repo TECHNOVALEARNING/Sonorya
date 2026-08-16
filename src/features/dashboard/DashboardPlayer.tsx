@@ -115,7 +115,7 @@ export const DashboardPlayer: React.FC<PlayerProps> = ({
               setRealDuration(dur);
             }
             
-            const pct = dur > 0 ? (curTime / dur) * 100 : 0;
+            const pct = dur > 0 ? Math.min(100, (curTime / dur) * 100) : 0;
             setProgress(pct);
             setElapsed(formatTime(curTime));
             if (onTimeUpdate) onTimeUpdate(curTime, dur);
@@ -338,8 +338,8 @@ export const DashboardPlayer: React.FC<PlayerProps> = ({
               onClick={handleSeek}
               style={{ flex: 1, height: 6, background: 'rgba(255,255,255,0.12)', borderRadius: 99, position: 'relative', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
             >
-              <div style={{ position: 'absolute', top: 0, left: 0, height: '100%', width: `${progress}%`, background: 'linear-gradient(90deg, #2DD4BF, #0EA5E9)', borderRadius: 99 }} />
-              <div style={{ position: 'absolute', left: `calc(${progress}% - 5px)`, width: 10, height: 10, background: '#2DD4BF', borderRadius: '50%', boxShadow: '0 0 10px #2DD4BF' }} />
+              <div style={{ position: 'absolute', top: 0, left: 0, height: '100%', width: `${Math.min(100, progress)}%`, background: 'linear-gradient(90deg, #2DD4BF, #0EA5E9)', borderRadius: 99 }} />
+              <div style={{ position: 'absolute', left: `calc(${Math.min(100, progress)}% - 5px)`, width: 10, height: 10, background: '#2DD4BF', borderRadius: '50%', boxShadow: '0 0 10px #2DD4BF' }} />
             </div>
             <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', fontWeight: 600, minWidth: 32 }}>{totalFormatted}</span>
           </div>

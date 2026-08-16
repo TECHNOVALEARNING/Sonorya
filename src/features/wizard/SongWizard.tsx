@@ -163,7 +163,8 @@ export const SongWizard: React.FC<SongWizardProps> = ({
 
   // Use 1 credit for 0 FCFA if user has credits available
   const handleUseCredit = () => {
-    if (userCredits <= 0) return;
+    if (userCredits <= 0 || isProcessingPayment) return;
+    setIsProcessingPayment(true);
 
     if (user) {
       const updatedCredits = Math.max(0, (user.songCredits || 0) - 1);
@@ -887,6 +888,8 @@ export const SongWizard: React.FC<SongWizardProps> = ({
                 {userCredits > 0 ? (
                   <button 
                     className="btn-coral" 
+                    onClick={handleUseCredit}
+                    disabled={isProcessingPayment}
                     style={{ 
                       flex: 2, 
                       padding: '16px 24px', 
@@ -894,13 +897,12 @@ export const SongWizard: React.FC<SongWizardProps> = ({
                       fontWeight: 800,
                       justifyContent: 'center', 
                       borderRadius: 16,
-                      background: 'linear-gradient(135deg, #F5B978 0%, #E89E53 100%)',
-                      color: '#090B10',
+                      background: isProcessingPayment ? 'rgba(255,255,255,0.1)' : 'linear-gradient(135deg, #F5B978 0%, #E89E53 100%)',
+                      color: isProcessingPayment ? 'rgba(255,255,255,0.5)' : '#090B10',
                       border: 'none',
-                      boxShadow: '0 8px 24px rgba(245, 185, 120, 0.3)',
+                      boxShadow: isProcessingPayment ? 'none' : '0 8px 24px rgba(245, 185, 120, 0.3)',
                       transition: 'transform 0.15s ease, box-shadow 0.15s ease'
                     }} 
-                    onClick={handleUseCredit}
                   >
                     🎵 Générer ma musique (1 crédit)
                   </button>
