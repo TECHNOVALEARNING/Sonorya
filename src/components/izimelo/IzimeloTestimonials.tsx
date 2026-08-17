@@ -18,7 +18,7 @@ export const IzimeloTestimonials: React.FC = () => {
     },
     {
       id: 'rev-2',
-      author: 'Mousse D.',
+      author: 'S.',
       rating: 5,
       text: tBase.items[1].text,
       occasion: tBase.items[1].occasion
