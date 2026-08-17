@@ -66,7 +66,7 @@ export const en = {
     titleHighlight: "occasion",
     subtitle: "Discover how our users elevated their events with a unique track.",
     items: [
-      { text: '"I created a song for my sister\'s wedding entrance. Everyone shed tears of emotion. It was simply magical!"', occasion: 'Wedding' },
+      { text: '"I created a song for my brother\'s wedding entrance. Everyone shed tears of emotion. It was simply magical!"', occasion: 'Wedding' },
       { text: '"For my dad\'s 50th birthday, we composed a Highlife track telling his story. It became the best gift of the night!"', occasion: 'Birthday' },
       { text: '"I used Sonorya to congratulate my son on his graduation. He couldn\'t believe it was a song made just for him!"', occasion: 'Graduation / Degree' }
     ]

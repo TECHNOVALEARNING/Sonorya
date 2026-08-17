@@ -66,7 +66,7 @@ export const fr = {
     titleHighlight: "l'occasion",
     subtitle: "Découvrez comment nos utilisateurs ont sublimé leurs événements avec un morceau unique.",
     items: [
-      { text: '"J\'ai créé une chanson pour l\'entrée des mariés de ma sœur. Tout le monde versait des larmes d\'émotion. C\'était tout simplement magique !"', occasion: 'Mariage' },
+      { text: '"J\'ai créé une chanson pour l\'entrée des mariés de mon frère. Tout le monde versait des larmes d\'émotion. C\'était tout simplement magique !"', occasion: 'Mariage' },
       { text: '"Pour les 50 ans de mon père, nous avons composé un morceau Highlife racontant son histoire. C\'est devenu le plus beau cadeau de la soirée !"', occasion: 'Anniversaire' },
       { text: '"J\'ai utilisé Sonorya pour féliciter mon fils pour l\'obtention de son BAC. Il n\'en revenait pas que ce soit une chanson créée rien que pour lui !"', occasion: 'Diplôme / BAC' }
     ]
