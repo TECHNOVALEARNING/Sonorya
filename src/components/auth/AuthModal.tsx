@@ -20,12 +20,20 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onSuccess, initia
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setIsSubmitting(true);
 
     if (mode === 'forgot') {
+      const { error: resetErr } = await authRepository.resetPassword(email);
+      setIsSubmitting(false);
+      if (resetErr) {
+        setError(resetErr);
+        return;
+      }
       showToast(`${t('auth.resetAlert')} ${email}`, 'success');
       setMode('login');
       return;
@@ -33,8 +41,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onSuccess, initia
 
     if (mode === 'login') {
       const result = await authRepository.loginWithEmail(email, password);
-      if (result.error === 'invalid_password') {
+      setIsSubmitting(false);
+      if (result.error === 'invalid_password' || result.error === 'Invalid login credentials') {
         setError(t('auth.errorInvalidPassword'));
+        return;
+      } else if (result.error) {
+        setError(result.error);
         return;
       }
       if (result.user) {
@@ -45,10 +57,22 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onSuccess, initia
 
     if (mode === 'signup') {
       const result = await authRepository.signupWithEmail(email, password, fullName);
+      setIsSubmitting(false);
+      
       if (result.error === 'email_taken') {
         setError(t('auth.errorEmailTaken'));
         return;
+      } else if (result.error) {
+        setError(result.error);
+        return;
       }
+      
+      if (result.requiresConfirmation) {
+        showToast('Un lien de confirmation a été envoyé à votre adresse e-mail. Veuillez la vérifier.', 'success');
+        setMode('login');
+        return;
+      }
+
       if (result.user) {
         showToast('Compte créé avec succès !', 'success');
         onSuccess(result.user);
@@ -183,11 +207,17 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onSuccess, initia
             </div>
           )}
 
-          <button type="submit" className="btn-coral" style={{ width: '100%', justifyContent: 'center' }}>
-            {mode === 'login' && t('auth.loginBtn')}
-            {mode === 'signup' && t('auth.signupBtn')}
-            {mode === 'forgot' && t('auth.forgotBtn')}
-            <ArrowRight size={16} />
+          <button type="submit" className="btn-coral" style={{ width: '100%', justifyContent: 'center' }} disabled={isSubmitting}>
+            {isSubmitting ? (
+              <span style={{ opacity: 0.8 }}>Chargement...</span>
+            ) : (
+              <>
+                {mode === 'login' && t('auth.loginBtn')}
+                {mode === 'signup' && t('auth.signupBtn')}
+                {mode === 'forgot' && t('auth.forgotBtn')}
+                <ArrowRight size={16} />
+              </>
+            )}
           </button>
         </form>
 

@@ -101,7 +101,7 @@ export class AuthRepository {
     return { user: null, error: 'unknown_error' };
   }
 
-  public async signupWithEmail(email: string, password: string, fullName: string): Promise<{ user: UserProfile | null; error?: string }> {
+  public async signupWithEmail(email: string, password: string, fullName: string): Promise<{ user: UserProfile | null; error?: string; requiresConfirmation?: boolean }> {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -113,10 +113,14 @@ export class AuthRepository {
     });
 
     if (error) {
+      if (error.message.includes('already registered')) return { user: null, error: 'email_taken' };
       return { user: null, error: error.message };
     }
 
     if (data.user) {
+      if (!data.session) {
+        return { user: null, requiresConfirmation: true };
+      }
       // Trigger takes care of inserting into public.users, but we might need a small delay before syncing
       await new Promise(r => setTimeout(r, 1000));
       await this.syncProfile(data.user.id);
@@ -124,6 +128,12 @@ export class AuthRepository {
     }
     
     return { user: null, error: 'unknown_error' };
+  }
+
+  public async resetPassword(email: string): Promise<{ error?: string }> {
+    const { error } = await supabase.auth.resetPasswordForEmail(email);
+    if (error) return { error: error.message };
+    return {};
   }
 
   public async loginWithGooglePayload(payload: any): Promise<UserProfile> {
