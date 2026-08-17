@@ -74,13 +74,13 @@ export const LandingFooter: React.FC<LandingFooterProps> = ({ onNavigate, onOpen
               {t('footer.desc')}
             </p>
             <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
-              <a href="#" onClick={(e) => e.preventDefault()} style={{ color: 'var(--ivory-dim)', transition: 'color 0.2s' }} title="Instagram"><Instagram size={20} /></a>
+              <a href="https://www.instagram.com/technova.learning?igsh=NGkwbjNocHUwMDE5" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--ivory-dim)', transition: 'color 0.2s' }} title="Instagram"><Instagram size={20} /></a>
               <a href="#" onClick={(e) => e.preventDefault()} style={{ color: 'var(--ivory-dim)', transition: 'color 0.2s', display: 'inline-flex' }} title="TikTok">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M19.589 6.686a4.793 4.793 0 0 1-3.77-4.245V2h-3.445v13.672a2.896 2.896 0 0 1-2.891 2.887 2.895 2.895 0 0 1-2.892-2.887 2.895 2.895 0 0 1 2.892-2.887c.277 0 .543.042.795.116V9.414a6.315 6.315 0 0 0-.795-.05 6.337 6.337 0 0 0-6.337 6.334 6.337 6.337 0 0 0 6.337 6.334 6.337 6.337 0 0 0 6.334-6.334V8.349a8.17 8.17 0 0 0 4.772 1.522V6.432a4.815 4.815 0 0 1-1.000.254z"/>
                 </svg>
               </a>
-              <a href="#" onClick={(e) => e.preventDefault()} style={{ color: 'var(--ivory-dim)', transition: 'color 0.2s' }} title="Facebook"><Facebook size={20} /></a>
+              <a href="https://www.facebook.com/share/18GYGMg9o8/" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--ivory-dim)', transition: 'color 0.2s' }} title="Facebook"><Facebook size={20} /></a>
             </div>
           </div>
 
