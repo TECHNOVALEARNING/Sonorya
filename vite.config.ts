@@ -1,9 +1,42 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig({
   plugins: [
     react(),
+    VitePWA({
+      registerType: 'autoUpdate',
+      injectRegister: 'auto',
+      includeAssets: ['favicon.png', 'apple-touch-icon.png', 'favicon.ico'],
+      manifest: {
+        name: 'Sonorya by Technova',
+        short_name: 'Sonorya',
+        description: 'Création de chanson personnalisée',
+        theme_color: '#090B10',
+        background_color: '#090B10',
+        display: 'standalone',
+        orientation: 'portrait',
+        icons: [
+          {
+            src: '/favicon.png',
+            sizes: '192x192',
+            type: 'image/png'
+          },
+          {
+            src: '/favicon.png',
+            sizes: '512x512',
+            type: 'image/png'
+          },
+          {
+            src: '/favicon.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'any maskable'
+          }
+        ]
+      }
+    }),
     {
       name: 'kie-ai-music-proxy',
       configureServer(server) {
