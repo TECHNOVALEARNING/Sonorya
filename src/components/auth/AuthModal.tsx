@@ -27,56 +27,72 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onSuccess, initia
     setError('');
     setIsSubmitting(true);
 
-    if (mode === 'forgot') {
-      const { error: resetErr } = await authRepository.resetPassword(email);
-      setIsSubmitting(false);
-      if (resetErr) {
-        setError(resetErr);
-        return;
-      }
-      showToast(`${t('auth.resetAlert')} ${email}`, 'success');
-      setMode('login');
-      return;
-    }
-
-    if (mode === 'login') {
-      const result = await authRepository.loginWithEmail(email, password);
-      setIsSubmitting(false);
-      if (result.error === 'invalid_password' || result.error === 'Invalid login credentials') {
-        setError(t('auth.errorInvalidPassword'));
-        return;
-      } else if (result.error) {
-        setError(result.error);
-        return;
-      }
-      if (result.user) {
-        showToast('Connexion réussie !', 'success');
-        onSuccess(result.user);
-      }
-    }
-
-    if (mode === 'signup') {
-      const result = await authRepository.signupWithEmail(email, password, fullName);
-      setIsSubmitting(false);
-      
-      if (result.error === 'email_taken') {
-        setError(t('auth.errorEmailTaken'));
-        return;
-      } else if (result.error) {
-        setError(result.error);
-        return;
-      }
-      
-      if (result.requiresConfirmation) {
-        showToast('Un lien de confirmation a été envoyé à votre adresse e-mail. Veuillez la vérifier.', 'success');
+    try {
+      if (mode === 'forgot') {
+        const { error: resetErr } = await authRepository.resetPassword(email);
+        setIsSubmitting(false);
+        if (resetErr) {
+          setError(resetErr);
+          return;
+        }
+        showToast(`${t('auth.resetAlert')} ${email}`, 'success');
         setMode('login');
         return;
       }
 
-      if (result.user) {
-        showToast('Compte créé avec succès !', 'success');
-        onSuccess(result.user);
+      if (mode === 'login') {
+        const result = await authRepository.loginWithEmail(email, password);
+        setIsSubmitting(false);
+        if (result.error === 'invalid_password' || result.error === 'Invalid login credentials') {
+          setError(t('auth.errorInvalidPassword'));
+          return;
+        } else if (result.error) {
+          setError(result.error);
+          return;
+        }
+        if (result.user) {
+          showToast('Connexion réussie !', 'success');
+          onSuccess(result.user);
+        } else {
+          setError('Erreur de connexion. Veuillez vérifier vos identifiants.');
+        }
       }
+
+      if (mode === 'signup') {
+        if (password.length < 6) {
+          setIsSubmitting(false);
+          setError('Le mot de passe doit contenir au moins 6 caractères.');
+          return;
+        }
+        
+        const result = await authRepository.signupWithEmail(email, password, fullName);
+        setIsSubmitting(false);
+        
+        if (result.error === 'email_taken') {
+          setError(t('auth.errorEmailTaken'));
+          return;
+        } else if (result.error) {
+          setError(result.error);
+          return;
+        }
+        
+        if (result.requiresConfirmation) {
+          showToast('Un lien de confirmation a été envoyé à votre adresse e-mail. Veuillez la vérifier.', 'success');
+          setMode('login');
+          return;
+        }
+
+        if (result.user) {
+          showToast('Compte créé avec succès !', 'success');
+          onSuccess(result.user);
+        } else {
+          setError('Inscription terminée. Vérifiez votre boîte mail pour confirmer votre compte.');
+        }
+      }
+    } catch (err: any) {
+      setIsSubmitting(false);
+      console.error('[AUTH SUBMIT ERROR]', err);
+      setError(err?.message || 'Une erreur est survenue. Veuillez réessayer.');
     }
   };
 
